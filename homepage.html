@@ -365,17 +365,33 @@
       }
 
       .nav-dropdown.tools-menu {
-        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
         width: min(930px, calc(100vw - 48px));
+      }
+
+      .nav-dropdown.tools-menu .nav-dropdown-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        gap: 24px;
       }
 
       .nav-dropdown.desktop-menu {
         position: fixed;
         top: 56px;
         left: var(--desktop-menu-left, 24px);
-        grid-template-columns: repeat(3, minmax(180px, 1fr));
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
         width: min(1200px, calc(100vw - 48px));
         transform: translate3d(0, 8px, 0);
+      }
+
+      .nav-dropdown.desktop-menu .nav-dropdown-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+        gap: 24px;
       }
 
       .nav-item:hover > .nav-dropdown.desktop-menu,
@@ -447,6 +463,32 @@
       .blog-menu .nav-menu-link:focus-visible {
         background: rgba(13, 13, 13, 0.06);
         color: var(--ink);
+      }
+
+      .nav-dropdown-footer {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        padding-top: 8px;
+        margin-top: 4px;
+        border-top: 1px solid rgba(33, 34, 38, 0.08);
+      }
+
+      .nav-all-tools-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 2px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #5948f3;
+        transition: color 160ms ease;
+      }
+
+      .nav-all-tools-link:hover,
+      .nav-all-tools-link:focus-visible {
+        color: #3186ff;
+        outline: none;
       }
 
       .header-actions {
@@ -1817,8 +1859,237 @@
       }
 
       .download {
-        padding: 92px 20px;
+        padding: 72px 20px 92px;
         background: #f8f9fc;
+      }
+
+      .download-inner {
+        width: min(1200px, 100%);
+        margin: 0 auto;
+        display: grid;
+        gap: 48px;
+      }
+
+      .user-testimonials {
+        display: grid;
+        gap: 32px;
+      }
+
+      .user-testimonials-head {
+        text-align: center;
+      }
+
+      .user-testimonials-head h2 {
+        margin: 0 0 12px;
+        font-size: clamp(32px, 4vw, 48px);
+        font-weight: 500;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+
+      .user-testimonials-head p {
+        margin: 0 auto;
+        max-width: 640px;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      .user-testimonials-layout {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+      }
+
+      .testimonial-tabs {
+        display: grid;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .testimonial-tab {
+        position: relative;
+        display: grid;
+        gap: 4px;
+        padding: 14px 16px 14px 20px;
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        transition: background 160ms ease;
+      }
+
+      .testimonial-tab::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 3px;
+        border-radius: 999px;
+        background: transparent;
+        transition: background 160ms ease;
+      }
+
+      .testimonial-tab.is-active {
+        background: rgba(89, 72, 243, 0.06);
+      }
+
+      .testimonial-tab.is-active::before {
+        background: #5948f3;
+      }
+
+      .testimonial-tab strong {
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+
+      .testimonial-tab span {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .testimonial-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .testimonial-card {
+        display: grid;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid rgba(33, 34, 38, 0.08);
+        box-shadow: 0 8px 24px rgba(33, 34, 38, 0.04);
+      }
+
+      .testimonial-thumb {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #eef1ff 0%, #dfe6ff 55%, #d2dcff 100%);
+      }
+
+      .testimonial-thumb-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+      }
+
+      .testimonial-thumb::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 40%, rgba(18, 19, 23, 0.35) 100%);
+      }
+
+      .testimonial-play {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 2;
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.92);
+        color: #5948f3;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 8px 20px rgba(33, 34, 38, 0.12);
+      }
+
+      .testimonial-duration {
+        position: absolute;
+        left: 10px;
+        bottom: 8px;
+        z-index: 2;
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: rgba(18, 19, 23, 0.55);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      .testimonial-stars {
+        color: #fec700;
+        font-size: 13px;
+        letter-spacing: 1px;
+        line-height: 1;
+      }
+
+      .testimonial-quote {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .testimonial-author {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+
+      .download-platforms {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        position: relative;
+      }
+
+      .download-platform {
+        display: grid;
+        gap: 14px;
+        justify-items: center;
+        padding: 24px 16px 20px;
+        border-radius: 24px;
+        background: #fff;
+        text-align: center;
+        box-shadow: inset 0 0 0 1px rgba(33, 34, 38, 0.08);
+      }
+
+      .download-platform .platforms img {
+        width: 56px;
+        height: 56px;
+      }
+
+      .download-platform h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .download-platform p {
+        margin: 0;
+        min-height: 40px;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.45;
+      }
+
+      .download-platform .btn {
+        width: 100%;
+        justify-content: center;
       }
 
       .download-layout {
@@ -2144,7 +2415,7 @@
       }
 
       .faq-item.is-open .answer {
-        max-height: 420px;
+        max-height: 480px;
         padding-bottom: 32px;
         opacity: 1;
         transform: translateY(0);
@@ -2158,6 +2429,32 @@
       .answer p {
         margin: 0 0 24px;
         color: #15172e;
+      }
+
+      .answer-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 16px;
+        margin-top: 8px;
+      }
+
+      .faq-learn-more {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: auto;
+        color: #5948f3;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: color 160ms ease;
+      }
+
+      .faq-learn-more:hover,
+      .faq-learn-more:focus-visible {
+        color: #3186ff;
+        outline: none;
       }
 
       .blog {
@@ -2541,6 +2838,18 @@
       }
 
       @media (max-width: 980px) {
+        .download-platforms {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .testimonial-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .user-testimonials-layout {
+          grid-template-columns: 1fr;
+        }
+
         .download-layout,
         .about-card,
         .blog-grid {
@@ -2579,6 +2888,11 @@
       }
 
       @media (max-width: 640px) {
+        .download-platforms,
+        .testimonial-grid {
+          grid-template-columns: 1fr;
+        }
+
         .download,
         .about,
         .faq,
@@ -3080,9 +3394,16 @@
       }
 
       .nav-dropdown.conversion-3d-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: min(960px, calc(100vw - 48px));
+      }
+
+      .nav-dropdown.conversion-3d-menu .nav-dropdown-grid {
+        display: grid;
         grid-template-columns: repeat(3, minmax(200px, 1fr));
         gap: 20px;
-        width: min(960px, calc(100vw - 48px));
       }
 
       .nav-dropdown.conversion-3d-menu .nav-group {
@@ -3228,17 +3549,52 @@
         display: grid;
         gap: 12px;
         text-align: left;
+        padding: 22px;
+        border-radius: 20px;
+        border: 1px solid transparent;
+        background: #fff;
+        transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      }
+
+      .why-choose-item:hover,
+      .why-choose-item:focus-visible {
+        border-color: rgba(89, 72, 243, 0.22);
+        box-shadow: 0 12px 32px rgba(89, 72, 243, 0.08);
+        transform: translateY(-2px);
+        outline: none;
+      }
+
+      .why-choose-doc-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 4px;
+        color: #5948f3;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.3;
+      }
+
+      .why-choose-item:hover .why-choose-doc-link,
+      .why-choose-item:focus-visible .why-choose-doc-link {
+        color: #3186ff;
       }
 
       .why-choose-icon {
         display: grid;
         place-items: center;
-        width: 52px;
-        height: 52px;
-        border-radius: 16px;
-        background: linear-gradient(135deg, #f4f1ff 0%, #ebe6ff 100%);
-        color: #5948f3;
-        font-size: 26px;
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #f8f7ff 0%, #f0edff 100%);
+        overflow: hidden;
+      }
+
+      .why-choose-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
 
       .why-choose-item h3 {
@@ -3448,8 +3804,11 @@
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .nav-dropdown.conversion-3d-menu {
+        .nav-dropdown.conversion-3d-menu .nav-dropdown-grid {
           grid-template-columns: 1fr;
+        }
+
+        .nav-dropdown.conversion-3d-menu {
           width: min(360px, calc(100vw - 48px));
         }
       }
@@ -3494,9 +3853,10 @@
       <nav class="desktop-nav" aria-label="Main">
         <div class="nav-item">
           <button class="nav-link nav-trigger" type="button" aria-expanded="false">
-            Tools <span class="material-symbols-rounded" aria-hidden="true">keyboard_arrow_down</span>
+            PDF Tools <span class="material-symbols-rounded" aria-hidden="true">keyboard_arrow_down</span>
           </button>
           <div class="nav-dropdown tools-menu" role="menu">
+            <div class="nav-dropdown-grid">
             <div class="nav-group">
               <p class="nav-group-title">Convert &amp; Compress</p>
               <div class="nav-menu-list">
@@ -3536,6 +3896,10 @@
                 <a class="nav-menu-link" href="#"><img src="images/tools-icon/JPG to PDF.svg" alt="">JPG to PDF</a>
               </div>
             </div>
+            </div>
+            <div class="nav-dropdown-footer">
+              <a class="nav-all-tools-link" href="https://szdmt.com/en-US/all-products/" target="_blank" rel="noopener noreferrer">All Tools →</a>
+            </div>
           </div>
         </div>
         <div class="nav-item nav-item--highlight">
@@ -3550,6 +3914,7 @@
             Desktop <span class="material-symbols-rounded" aria-hidden="true">keyboard_arrow_down</span>
           </button>
           <div class="nav-dropdown desktop-menu" role="menu">
+            <div class="nav-dropdown-grid">
             <div class="nav-group">
               <p class="nav-group-title">Educational Users</p>
               <div class="nav-subgrid">
@@ -3580,9 +3945,16 @@
                 <a class="nav-menu-link" href="#"><img src="images/tools-icon/convert-pdf.svg" alt="">PDF Filler</a>
                 <a class="nav-menu-link" href="#"><img src="images/tools-icon/signing-pdf.svg" alt="">eSign PDF</a>
                 <a class="nav-menu-link" href="#"><img src="images/tools-icon/convert-pdf.svg" alt="">Protect PDF</a>
-                <a class="nav-menu-link" href="#"><img src="images/tools-icon/convert-pdf.svg" alt="">OCR PDF</a>
-                <a class="nav-menu-link" href="#"><img src="images/tools-icon/convert-pdf.svg" alt="">Compare PDF</a>
+                <a class="nav-menu-link" href="#"><img src="images/tools-icon/convert-pdf.svg" alt="">Sign PDF</a>
+                <a class="nav-menu-link" href="#"><img src="images/tools-icon/convert-pdf.svg" alt="">PDF Splitter</a>
+                <a class="nav-menu-link" href="#"><img src="images/tools-icon/signing-pdf.svg" alt="">Extra PDF Data</a>
+                <a class="nav-menu-link" href="#"><img src="images/tools-icon/convert-pdf.svg" alt="">Batch PDF</a>
+                <a class="nav-menu-link" href="#"><img src="images/tools-icon/convert-pdf.svg" alt="">Add Watermark to PDF</a>
               </div>
+            </div>
+            </div>
+            <div class="nav-dropdown-footer">
+              <a class="nav-all-tools-link" href="https://szdmt.com/en-US/all-products/" target="_blank" rel="noopener noreferrer">All Tools →</a>
             </div>
           </div>
         </div>
@@ -3686,60 +4058,124 @@
       </section>
 
       <section id="download" class="download">
-        <div class="download-layout">
-          <div class="download-intro">
-            <h2>Download WPS Office<br><span class="script">and</span> Edit PDF</h2>
-            <p>Download WPS Office to get more PDF management features such as OCR (image scanning and conversion), adding watermarks and e-signatures, and PDF to image conversion.</p>
-            <div class="device-art" aria-hidden="true">
-              <img src="images/legacy/pic.svg" alt="">
+        <div class="download-inner">
+          <section class="user-testimonials" aria-labelledby="testimonials-title">
+            <div class="user-testimonials-head">
+              <h2 id="testimonials-title">Trusted by Experts. Proven by Users</h2>
+              <p>Experience the shift from manual labor to intelligent creation. WPS software is your co-pilot for every task.</p>
             </div>
-          </div>
-          <div class="download-cards download-cards--five">
-            <article class="download-card">
-              <div>
-                <div class="platforms"><img src="images/legacy/platforms/windows.svg" alt=""></div>
-                <p class="label">WPS Office for</p>
-                <h3>Windows</h3>
-                <p>Download WPS Office Desktop Editor to get a lightweight PDF tool that provides complete solutions for all PDF problems.</p>
-                <p class="meta">5.3M / Feb 26 2025</p>
+            <div class="user-testimonials-layout">
+              <div class="testimonial-tabs" role="tablist" aria-label="Testimonial categories">
+                <button class="testimonial-tab is-active" type="button" role="tab" aria-selected="true" data-testimonial-tab="kol"><strong>KOL Videos</strong><span>What creators are saying</span></button>
+                <button class="testimonial-tab" type="button" role="tab" aria-selected="false" data-testimonial-tab="media"><strong>PR&amp;Media</strong><span>Tech press and industry reviews</span></button>
+                <button class="testimonial-tab" type="button" role="tab" aria-selected="false" data-testimonial-tab="g2"><strong>G2 Users</strong><span>Real feedback from daily users</span></button>
               </div>
+              <div class="testimonial-grid" data-testimonial-grid>
+                <article class="testimonial-card">
+                  <div class="testimonial-thumb">
+                    <img class="testimonial-thumb-img" src="https://res-academy.cache.wpscdn.com/upload/seo-engine-admin/2026-03-24/fb527d82afdd95b7211dd3f2c78b4d99.jpg" alt="Kevin Stratvert" loading="lazy" decoding="async" />
+                    <span class="testimonial-play material-symbols-rounded" aria-hidden="true">play_arrow</span><span class="testimonial-duration">14:14</span>
+                  </div>
+                  <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+                  <p class="testimonial-quote">A powerful Microsoft Office alternative with familiar design, full compatibility, and built-in PDF tools — trusted by millions worldwide.</p>
+                  <p class="testimonial-author">Kevin Stratvert</p>
+                </article>
+                <article class="testimonial-card">
+                  <div class="testimonial-thumb">
+                    <img class="testimonial-thumb-img" src="https://res-academy.cache.wpscdn.com/upload/seo-engine-admin/2026-03-24/8adc4faad73760392b15b229f1de8917.jpg" alt="Brett In Tech" loading="lazy" decoding="async" />
+                    <span class="testimonial-play material-symbols-rounded" aria-hidden="true">play_arrow</span><span class="testimonial-duration">07:04</span>
+                  </div>
+                  <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+                  <p class="testimonial-quote">Excellent compatibility with Office formats, plus 100,000+ templates and a full suite of tools — all available across desktop and mobile.</p>
+                  <p class="testimonial-author">Brett In Tech</p>
+                </article>
+                <article class="testimonial-card">
+                  <div class="testimonial-thumb">
+                    <img class="testimonial-thumb-img" src="https://res-academy.cache.wpscdn.com/upload/seo-engine-admin/2026-03-24/c1f0a40c7f6f039e68a3009bc6db18dc.jpg" alt="Levelup iD" loading="lazy" decoding="async" />
+                    <span class="testimonial-play material-symbols-rounded" aria-hidden="true">play_arrow</span><span class="testimonial-duration">08:53</span>
+                  </div>
+                  <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+                  <p class="testimonial-quote">Create, edit, and manage all your documents in one place — with templates, PDF tools, and full cross-platform support.</p>
+                  <p class="testimonial-author">Levelup iD</p>
+                </article>
+                <article class="testimonial-card">
+                  <div class="testimonial-thumb">
+                    <img class="testimonial-thumb-img" src="https://res-academy.cache.wpscdn.com/upload/seo-engine-admin/2026-03-24/3439fe9a87d9c7cfa0882f614a4501b8.jpg" alt="Học Viện" loading="lazy" decoding="async" />
+                    <span class="testimonial-play material-symbols-rounded" aria-hidden="true">play_arrow</span><span class="testimonial-duration">09:16</span>
+                  </div>
+                  <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+                  <p class="testimonial-quote">With a familiar interface, powerful AI features for writing and translation, and smooth performance across devices, WPS is a smart and efficient way to get your work done.</p>
+                  <p class="testimonial-author">Học Viện</p>
+                </article>
+                <article class="testimonial-card">
+                  <div class="testimonial-thumb">
+                    <img class="testimonial-thumb-img" src="https://res-academy.cache.wpscdn.com/upload/seo-engine-admin/2026-03-24/eed55eb0ec1867345eb873561984e45c.jpg" alt="Michael Horn" loading="lazy" decoding="async" />
+                    <span class="testimonial-play material-symbols-rounded" aria-hidden="true">play_arrow</span><span class="testimonial-duration">08:28</span>
+                  </div>
+                  <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+                  <p class="testimonial-quote">Designed to feel instantly familiar, with a clean interface and a smooth, easy-to-use experience.</p>
+                  <p class="testimonial-author">Michael Horn</p>
+                </article>
+                <article class="testimonial-card">
+                  <div class="testimonial-thumb">
+                    <img class="testimonial-thumb-img" src="https://res-academy.cache.wpscdn.com/upload/seo-engine-admin/2026-03-24/66a24926ef650b59cde7204a1284aa22.jpg" alt="Bogtechs" loading="lazy" decoding="async" />
+                    <span class="testimonial-play material-symbols-rounded" aria-hidden="true">play_arrow</span><span class="testimonial-duration">14:06</span>
+                  </div>
+                  <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+                  <p class="testimonial-quote">Brings a desktop-like Office experience to mobile — familiar, easy to use, and powerful in one all-in-one app.</p>
+                  <p class="testimonial-author">Bogtechs</p>
+                </article>
+                <article class="testimonial-card">
+                  <div class="testimonial-thumb">
+                    <img class="testimonial-thumb-img" src="https://res-academy.cache.wpscdn.com/upload/seo-engine-admin/2026-03-24/552cf6216d3f6ef9b385aa41ac67c7b9.jpg" alt="AI BORDER" loading="lazy" decoding="async" />
+                    <span class="testimonial-play material-symbols-rounded" aria-hidden="true">play_arrow</span><span class="testimonial-duration">04:05</span>
+                  </div>
+                  <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+                  <p class="testimonial-quote">With powerful AI tools, you can generate content, translate full documents instantly, summarize long files, and even chat with your PDFs for quick insights.</p>
+                  <p class="testimonial-author">AI BORDER</p>
+                </article>
+                <article class="testimonial-card">
+                  <div class="testimonial-thumb">
+                    <img class="testimonial-thumb-img" src="https://res-academy.cache.wpscdn.com/upload/seo-engine-admin/2026-03-24/1c201460fb2177c4c1f44df32ed572ea.jpg" alt="Mazthertutoriales" loading="lazy" decoding="async" />
+                    <span class="testimonial-play material-symbols-rounded" aria-hidden="true">play_arrow</span><span class="testimonial-duration">08:02</span>
+                  </div>
+                  <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+                  <p class="testimonial-quote">Fast, lightweight, and easy to use, it's one of the best choices for creating and editing documents, spreadsheets, and presentations without hassle.</p>
+                  <p class="testimonial-author">Mazthertutoriales</p>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <div class="download-platforms">
+            <article class="download-platform">
+              <div class="platforms"><img src="images/legacy/platforms/windows.svg" alt=""></div>
+              <h3>Windows</h3>
+              <p>Complete PDF toolkit for desktop editing and conversion.</p>
               <a class="btn blue" href="#download" data-wps-download="windows"><span>Free Download</span><span class="btn-icon"><img src="images/legacy/arrow-up-right.svg" alt=""></span></a>
             </article>
-            <article class="download-card">
-              <div>
-                <div class="platforms"><img src="images/legacy/platforms/macos.svg" alt=""></div>
-                <p class="label">WPS Office for</p>
-                <h3>Mac</h3>
-                <p>WPS Office, perfectly compatible with the macOS system on Mac, and supports Intel and Apple chips to help you edit PDFs easily.</p>
-                <p class="meta">982KB / Feb 24 2025</p>
-              </div>
+            <article class="download-platform">
+              <div class="platforms"><img src="images/legacy/platforms/macos.svg" alt=""></div>
+              <h3>Mac</h3>
+              <p>Compatible with Intel and Apple chips for seamless PDF work.</p>
               <a class="btn blue" href="#download" data-wps-download="mac"><span>Free Download</span><span class="btn-icon"><img src="images/legacy/arrow-up-right.svg" alt=""></span></a>
             </article>
-            <article class="download-card">
-              <div>
-                <div class="platforms"><img src="images/legacy/platforms/linux.svg" alt=""></div>
-                <p class="label">WPS Office for</p>
-                <h3>Linux</h3>
-                <p>WPS Office is a free office suite that supports Linux. Download the WPS Office app to access PDF tools anytime.</p>
-              </div>
+            <article class="download-platform">
+              <div class="platforms"><img src="images/legacy/platforms/linux.svg" alt=""></div>
+              <h3>Linux</h3>
+              <p>Free office suite with full PDF tools for Linux users.</p>
               <button class="btn blue download-toggle" type="button" aria-expanded="false" aria-controls="linux-download-menu" data-dropdown-toggle="linux-download-menu"><span>Free Download</span><span class="btn-icon"><img src="images/legacy/down.svg" alt=""></span></button>
             </article>
-            <article class="download-card">
-              <div>
-                <div class="platforms"><img src="images/legacy/platforms/android.svg" alt=""></div>
-                <p class="label">WPS Office for</p>
-                <h3>Android</h3>
-                <p>Google Play Best of 2015. Edit, convert, and share documents on the go with the WPS Office Android app.</p>
-              </div>
+            <article class="download-platform">
+              <div class="platforms"><img src="images/legacy/platforms/android.svg" alt=""></div>
+              <h3>Android</h3>
+              <p>Edit, convert, and share documents on the go.</p>
               <a class="btn blue" href="#download" data-wps-download="android"><span>Free Download</span><span class="btn-icon"><img src="images/legacy/Google Play.svg" alt=""></span></a>
             </article>
-            <article class="download-card">
-              <div>
-                <div class="platforms"><img src="images/legacy/platforms/ios.svg" alt=""></div>
-                <p class="label">WPS Office for</p>
-                <h3>iOS</h3>
-                <p>App Store Best of 2015. Work with PDFs, Word, Excel, and PPT seamlessly on iPhone and iPad.</p>
-              </div>
+            <article class="download-platform">
+              <div class="platforms"><img src="images/legacy/platforms/ios.svg" alt=""></div>
+              <h3>iOS</h3>
+              <p>Work with PDFs, Word, Excel, and PPT on iPhone and iPad.</p>
               <a class="btn blue" href="#download" data-wps-download="ios"><span>Free Download</span><span class="btn-icon"><img src="images/legacy/appstore.svg" alt=""></span></a>
             </article>
             <div class="dropdown linux" id="linux-download-menu">
@@ -3757,7 +4193,12 @@
             <button class="faq-question" type="button" aria-expanded="false">
               <span>How to convert a PDF file?</span><span class="faq-icon" aria-hidden="true"><span class="material-symbols-rounded">expand_more</span></span>
             </button>
-            <div class="answer"><p>You can use PDF Converter to convert PDF files to/from Word, Excel, PowerPoint, and image files online. Take PDF to Word conversion as an example. Open PDF to Word Converter, click Select File to upload your file, then download the Word document.</p></div>
+            <div class="answer">
+              <p>You can use PDF Converter to convert PDF files to/from Word, Excel, PowerPoint, and image files online. Take PDF to Word conversion as an example. Open PDF to Word Converter, click Select File to upload your file, then download the Word document.</p>
+              <div class="answer-footer">
+                <a class="faq-learn-more" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/windows/faq/" target="_blank" rel="noopener noreferrer">Learn More →</a>
+              </div>
+            </div>
           </article>
           <article class="faq-item">
             <button class="faq-question" type="button" aria-expanded="false">
@@ -3765,7 +4206,10 @@
             </button>
             <div class="answer">
               <p>1. Open the WPS PDF editor or <a href="https://www.wps.com/download/?utm_source=pdfhomepage" target="_blank" rel="noreferrer">download WPS Office</a> to open a PDF file.<br>2. Click Text Tools on the top navigation bar.<br>3. Add text to the PDF page. Click the existing text to start editing.<br>4. Add images to the PDF page. Drag and move, resize, or rotate the images.<br>5. Fill PDFs and add an e-signature by drawing, typing, or uploading your signature image.<br>6. Annotate PDF pages with highlighted text, and mark changes. Try the Sign PDF tool online for free.</p>
-              <a class="btn blue" href="#"><span>Start Editing</span><span class="btn-icon"><img src="images/legacy/arrow-up-right.svg" alt=""></span></a>
+              <div class="answer-footer">
+                <a class="btn blue" href="#"><span>Start Editing</span><span class="btn-icon"><img src="images/legacy/arrow-up-right.svg" alt=""></span></a>
+                <a class="faq-learn-more" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/windows/faq/" target="_blank" rel="noopener noreferrer">Learn More →</a>
+              </div>
             </div>
           </article>
           <article class="faq-item">
@@ -3774,7 +4218,10 @@
             </button>
             <div class="answer">
               <p>1. You can open the PDF Organizer online tool and click Select File to upload your file.<br>2. You can arrange the pages in this PDF file by adding new pages, deleting old pages, or adjusting the order of the pages.<br>3. Click Continue to download the file.<br>4. Try the Manage PDF tool online for free now.</p>
-              <a class="btn blue" href="#"><span>Free Trial</span><span class="btn-icon"><img src="images/legacy/arrow-up-right.svg" alt=""></span></a>
+              <div class="answer-footer">
+                <a class="btn blue" href="#"><span>Free Trial</span><span class="btn-icon"><img src="images/legacy/arrow-up-right.svg" alt=""></span></a>
+                <a class="faq-learn-more" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/windows/faq/" target="_blank" rel="noopener noreferrer">Learn More →</a>
+              </div>
             </div>
           </article>
         </div>
@@ -3810,36 +4257,42 @@
       <section id="why-choose" class="why-choose" aria-labelledby="why-choose-title">
         <h2 id="why-choose-title">Why Choose WPS PDF?</h2>
         <div class="why-choose-grid">
-          <article class="why-choose-item">
-            <div class="why-choose-icon" aria-hidden="true"><span class="material-symbols-rounded">auto_awesome</span></div>
+          <a class="why-choose-item" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/" target="_blank" rel="noopener noreferrer">
+            <div class="why-choose-icon" aria-hidden="true"><img src="images/why-choose/toolkit.png" alt=""></div>
             <h3>All-in-One PDF Online Toolkit</h3>
             <p>WPS PDF is a useful all-in-one PDF online tool that makes it easy to edit, convert, and manage PDF files. It works as an online PDF editor, converter, merger, form filler, and organizer for editing page, text, or layout in seconds.</p>
-          </article>
-          <article class="why-choose-item">
-            <div class="why-choose-icon" aria-hidden="true"><span class="material-symbols-rounded">edit_document</span></div>
+            <span class="why-choose-doc-link">Learn More →</span>
+          </a>
+          <a class="why-choose-item" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/" target="_blank" rel="noopener noreferrer">
+            <div class="why-choose-icon" aria-hidden="true"><img src="images/why-choose/edit-pdf.png" alt=""></div>
             <h3>Edit PDFs Like Word</h3>
             <p>PDF is now a component of WPS Office, providing collaborative viewing, annotation, and editing. Add text and images, fill forms, draw e-signatures, and annotate pages with highlights—without a steep learning curve.</p>
-          </article>
-          <article class="why-choose-item">
-            <div class="why-choose-icon" aria-hidden="true"><span class="material-symbols-rounded">desktop_windows</span></div>
+            <span class="why-choose-doc-link">Learn More →</span>
+          </a>
+          <a class="why-choose-item" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/" target="_blank" rel="noopener noreferrer">
+            <div class="why-choose-icon" aria-hidden="true"><img src="images/why-choose/desktop.png" alt=""></div>
             <h3>Online Tools + Desktop Power</h3>
             <p>Start with free online tools, then download WPS Office to unlock OCR (image scanning and conversion), watermarks, e-signatures, PDF-to-image conversion, and faster desktop performance when you need more.</p>
-          </article>
-          <article class="why-choose-item">
-            <div class="why-choose-icon" aria-hidden="true"><span class="material-symbols-rounded">compress</span></div>
+            <span class="why-choose-doc-link">Learn More →</span>
+          </a>
+          <a class="why-choose-item" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/" target="_blank" rel="noopener noreferrer">
+            <div class="why-choose-icon" aria-hidden="true"><img src="images/why-choose/compress.png" alt=""></div>
             <h3>Smart PDF Compression</h3>
             <p>Reduce PDF file size online with multiple compression ratios (HD, Recommended, Smallest). The compression process preserves your information without damaging files, so you can share documents faster.</p>
-          </article>
-          <article class="why-choose-item">
-            <div class="why-choose-icon" aria-hidden="true"><span class="material-symbols-rounded">devices</span></div>
+            <span class="why-choose-doc-link">Learn More →</span>
+          </a>
+          <a class="why-choose-item" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/" target="_blank" rel="noopener noreferrer">
+            <div class="why-choose-icon" aria-hidden="true"><img src="images/why-choose/platforms.png" alt=""></div>
             <h3>Available on Every Platform</h3>
             <p>WPS Office is available for Windows, Mac, Linux, Android, and iOS. Mac builds support Intel and Apple chips, and the Android app was named Google Play Best of 2015—so you can work wherever you are.</p>
-          </article>
-          <article class="why-choose-item">
-            <div class="why-choose-icon" aria-hidden="true"><span class="material-symbols-rounded">view_in_ar</span></div>
+            <span class="why-choose-doc-link">Learn More →</span>
+          </a>
+          <a class="why-choose-item" href="https://www.wps.ai/en-US/docs/wps-pdf/quick-start/create-new-pdf/" target="_blank" rel="noopener noreferrer">
+            <div class="why-choose-icon" aria-hidden="true"><img src="images/why-choose/3d.png" alt=""></div>
             <h3>Now with 3D Format Conversion</h3>
             <p>Convert mesh, CAD, and BIM formats—including OBJ, STEP, IFC, and Revit—into STL, FBX, GLB/GLTF, and more for design, engineering, and visualization workflows.</p>
-          </article>
+            <span class="why-choose-doc-link">Learn More →</span>
+          </a>
         </div>
       </section>
 
@@ -4028,18 +4481,25 @@
           cad: "CAD Industrial",
           bim: "BIM & Architecture"
         };
-        menu.innerHTML = Object.entries(conversion3DCatalog).map(([scene, groups]) => `
-          <div class="nav-group">
-            <p class="nav-group-title">${labels[scene]}</p>
-            <div class="nav-menu-list">
-              ${groups.map((group) => {
-                const title = build3DGroupedTitle(group.input, group.outputs);
-                const short = group.input.length > 6 ? group.input.slice(0, 4) : group.input.slice(0, 3);
-                return `<a class="nav-menu-link nav-menu-link--grouped" href="#" aria-label="${title}"><span class="nav-format-icon">${short}</span><span class="nav-menu-link-text"><strong>${group.input}</strong><span class="nav-menu-link-targets">to ${group.outputs.join(" / ")}</span></span></a>`;
-              }).join("")}
-            </div>
+        menu.innerHTML = `
+          <div class="nav-dropdown-grid">
+            ${Object.entries(conversion3DCatalog).map(([scene, groups]) => `
+              <div class="nav-group">
+                <p class="nav-group-title">${labels[scene]}</p>
+                <div class="nav-menu-list">
+                  ${groups.map((group) => {
+                    const title = build3DGroupedTitle(group.input, group.outputs);
+                    const short = group.input.length > 6 ? group.input.slice(0, 4) : group.input.slice(0, 3);
+                    return `<a class="nav-menu-link nav-menu-link--grouped" href="#" aria-label="${title}"><span class="nav-format-icon">${short}</span><span class="nav-menu-link-text"><strong>${group.input}</strong><span class="nav-menu-link-targets">to ${group.outputs.join(" / ")}</span></span></a>`;
+                  }).join("")}
+                </div>
+              </div>
+            `).join("")}
           </div>
-        `).join("");
+          <div class="nav-dropdown-footer">
+            <a class="nav-all-tools-link" href="https://szdmt.com/en-US/all-products/" target="_blank" rel="noopener noreferrer">All Tools →</a>
+          </div>
+        `;
       }
 
       function renderToolsDirectory() {
@@ -4637,14 +5097,14 @@
           lastTickTime = now;
 
           if (entryStart) {
-            entryProgress = reducedMotion ? 1 : clamp((now - entryStart) / 1050, 0, 1);
+            entryProgress = reducedMotion ? 1 : clamp((now - entryStart) / 1500, 0, 1);
             if (entryProgress < 1) keepAnimating = true;
             else entryStart = 0;
           }
 
           if (!isDragging) {
             const delta = targetPosition - position;
-            const easing = 1 - Math.exp(-frameTime / 115);
+            const easing = 1 - Math.exp(-frameTime / 280);
             position = clamp(position + delta * easing, 0, maxPosition());
             if (Math.abs(delta) > .0005) {
               keepAnimating = true;
@@ -4720,9 +5180,18 @@
           if (sectionIsVisible) startEntry();
         };
 
+        const getPageStep = () => {
+          if (!cards.length || visibleTools.length <= 5) return 1;
+          measureSpacing();
+          const viewportWidth = viewport.clientWidth;
+          const step = Math.max(1, Math.floor(viewportWidth / spacing));
+          return Math.min(step, maxPosition() + 1);
+        };
+
         const move = (direction) => {
           if (visibleTools.length <= 5) return;
-          targetPosition = clamp(targetPosition + direction, 0, maxPosition());
+          const step = getPageStep();
+          targetPosition = clamp(targetPosition + direction * step, 0, maxPosition());
           ensureAnimation();
         };
 
@@ -4792,7 +5261,7 @@
           isDragging = false;
           viewport.classList.remove("is-dragging");
           if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
-          targetPosition = clamp(position + dragVelocity * 8, 0, maxPosition());
+          targetPosition = clamp(position + dragVelocity * 5, 0, maxPosition());
           ensureAnimation();
         };
 
@@ -4822,6 +5291,16 @@
       }
 
       initToolCarousel();
+
+      document.querySelectorAll("[data-testimonial-tab]").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll("[data-testimonial-tab]").forEach((item) => {
+            const active = item === tab;
+            item.classList.toggle("is-active", active);
+            item.setAttribute("aria-selected", String(active));
+          });
+        });
+      });
 
       mobileButton.addEventListener("click", () => {
         const isOpen = mobileMenu.classList.toggle("is-open");
