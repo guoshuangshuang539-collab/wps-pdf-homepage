@@ -3397,28 +3397,27 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        width: min(1200px, calc(100vw - 48px));
+        width: min(960px, calc(100vw - 48px));
       }
 
       .nav-dropdown.conversion-3d-menu .nav-dropdown-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(180px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(3, minmax(200px, 1fr));
+        gap: 20px;
       }
 
       .nav-dropdown.conversion-3d-menu .nav-group {
-        gap: 24px;
+        gap: 12px;
       }
 
       .nav-dropdown.conversion-3d-menu .nav-menu-list {
-        gap: 24px;
+        gap: 8px;
         padding-right: 0;
       }
 
       .nav-dropdown.conversion-3d-menu .nav-menu-link {
-        font-size: 14px;
-        line-height: 18px;
-        white-space: nowrap;
+        font-size: 13px;
+        line-height: 1.35;
       }
 
       .nav-format-icon {
@@ -4436,82 +4435,13 @@
         "linear-gradient(135deg, #f7f4ff 0%, #ebe4ff 55%, #ddd2ff 100%)"
       ];
 
-      const conversion3DNavGroups = [
-        {
-          title: "Mesh Formats",
-          layout: "list",
-          items: [
-            {
-              id: "core-mesh",
-              label: "Core Mesh Converter",
-              icon: "OBJ",
-              inputs: ["OBJ", "STL", "FBX", "GLB/GLTF"],
-              desc: "Convert OBJ, STL, FBX, and GLB/GLTF mesh files online for 3D printing, games, and web viewing."
-            },
-            {
-              id: "ext-mesh",
-              label: "Extended Mesh Converter",
-              icon: "PLY",
-              inputs: ["DAE", "3DS", "X", "3MF", "OFF", "AC3D", "PLY"],
-              desc: "Convert DAE, 3DS, X, 3MF, OFF, AC3D, and PLY mesh files online with the same cross-format support."
-            }
-          ]
-        },
-        {
-          title: "CAD Industrial",
-          layout: "subgrid",
-          items: [
-            {
-              id: "step",
-              label: "STEP Converter",
-              icon: "STP",
-              inputs: ["STEP"],
-              desc: "Convert STEP files to GLB/GLTF, FBX, OBJ, and STL for visualization, sharing, and 3D printing."
-            },
-            {
-              id: "iges",
-              label: "IGES Converter",
-              icon: "IGS",
-              inputs: ["IGES"],
-              desc: "Convert IGES files to STEP, GLB/GLTF, FBX, OBJ, and STL for CAD exchange and downstream workflows."
-            },
-            {
-              id: "mcad",
-              label: "MCAD Converter",
-              icon: "SW",
-              inputs: ["SolidWorks", "Creo", "CATIA V5", "NX", "Inventor", "Solid Edge"],
-              desc: "Convert SolidWorks, Creo, CATIA V5, NX, Inventor, and Solid Edge files to STEP and mesh formats."
-            },
-            {
-              id: "kernel",
-              label: "CAD Kernel Converter",
-              icon: "JT",
-              inputs: ["Parasolid", "ACIS", "JT", "PRC"],
-              desc: "Convert Parasolid, ACIS, JT, and PRC files to STEP, GLB/GLTF, FBX, OBJ, and STL."
-            }
-          ]
-        },
-        {
-          title: "BIM & Architecture",
-          layout: "list",
-          items: [
-            {
-              id: "bim",
-              label: "BIM Converter",
-              icon: "IFC",
-              inputs: ["IFC", "Revit"],
-              desc: "Convert IFC and Revit models to GLB/GLTF, FBX, OBJ, and STL for BIM visualization and sharing."
-            },
-            {
-              id: "aec",
-              label: "AEC Converter",
-              icon: "SKP",
-              inputs: ["Navisworks", "DWF", "AutoCAD", "SKP"],
-              desc: "Convert Navisworks, DWF, AutoCAD, and SKP files to GLB/GLTF, FBX, OBJ, and STL."
-            }
-          ]
-        }
-      ];
+      function build3DGroupedTitle(input, outputs) {
+        return `${input} to ${outputs.join("/")}`;
+      }
+
+      function build3DGroupedDesc(input, outputs) {
+        return `Convert ${input} files to ${outputs.join(", ")} online for 3D visualization, printing, game engines, and cross-platform sharing.`;
+      }
 
       function getGrouped3DConversions() {
         const items = [];
@@ -4520,33 +4450,24 @@
             items.push({
               scene,
               input: group.input,
-              outputs: group.outputs
+              outputs: group.outputs,
+              title: build3DGroupedTitle(group.input, group.outputs)
             });
           });
         });
         return items;
       }
 
-      function getAtomicRows(inputs) {
-        const inputSet = new Set(inputs);
-        return getGrouped3DConversions().filter((row) => inputSet.has(row.input));
-      }
+      const conversion3DGrouped = getGrouped3DConversions();
 
-      function getDisplayOutputs(inputs) {
-        return [...new Set(getAtomicRows(inputs).flatMap((row) => row.outputs))];
-      }
-
-      const conversion3DNavFlat = conversion3DNavGroups.flatMap((group) => group.items);
-
-      const tools3D = conversion3DNavFlat.map((item, index) => ({
-        title: item.label,
-        desc: item.desc,
+      const tools3D = conversion3DGrouped.map((item, index) => ({
+        title: item.title,
+        desc: build3DGroupedDesc(item.input, item.outputs),
         icon: "convert-pdf.svg",
         category: "3d-conversion",
         gradient: conversion3DGradients[index % conversion3DGradients.length],
-        input: item.icon,
-        outputs: getDisplayOutputs(item.inputs),
-        inputs: item.inputs,
+        input: item.input,
+        outputs: item.outputs,
         badge: index === 0 ? "NEW" : undefined
       }));
 
@@ -4555,18 +4476,22 @@
       function render3DNavMenu() {
         const menu = document.querySelector("[data-3d-nav-menu]");
         if (!menu) return;
+        const labels = {
+          mesh: "Mesh Formats",
+          cad: "CAD Industrial",
+          bim: "BIM & Architecture"
+        };
         menu.innerHTML = `
           <div class="nav-dropdown-grid">
-            ${conversion3DNavGroups.map((group) => `
+            ${Object.entries(conversion3DCatalog).map(([scene, groups]) => `
               <div class="nav-group">
-                <p class="nav-group-title">${group.title}</p>
-                <div class="${group.layout === "subgrid" ? "nav-subgrid" : "nav-menu-list"}">
-                  ${group.items.map((item) => `
-                    <a class="nav-menu-link" href="#" aria-label="${item.label}">
-                      <span class="nav-format-icon">${item.icon.slice(0, 3)}</span>
-                      ${item.label}
-                    </a>
-                  `).join("")}
+                <p class="nav-group-title">${labels[scene]}</p>
+                <div class="nav-menu-list">
+                  ${groups.map((group) => {
+                    const title = build3DGroupedTitle(group.input, group.outputs);
+                    const short = group.input.length > 6 ? group.input.slice(0, 4) : group.input.slice(0, 3);
+                    return `<a class="nav-menu-link nav-menu-link--grouped" href="#" aria-label="${title}"><span class="nav-format-icon">${short}</span><span class="nav-menu-link-text"><strong>${group.input}</strong><span class="nav-menu-link-targets">to ${group.outputs.join(" / ")}</span></span></a>`;
+                  }).join("")}
                 </div>
               </div>
             `).join("")}
@@ -4610,24 +4535,20 @@
           { title: "Protect PDF", icon: "convert-pdf.svg" }
         ];
 
-        const renderLink = (item) => `
-          <a class="tools-directory-link" href="#" aria-label="${item.title}">
-            <span class="tools-directory-icon"><img src="images/tools-icon/${encodeURIComponent(item.icon || "convert-pdf.svg")}" alt=""></span>
-            <span>${item.title}</span>
-          </a>
-        `;
+        const renderLink = (item, grouped = false) => {
+          const iconMarkup = grouped
+            ? `<span class="tools-directory-icon"><span class="format-dot" aria-hidden="true"></span></span>`
+            : `<span class="tools-directory-icon"><img src="images/tools-icon/${encodeURIComponent(item.icon || "convert-pdf.svg")}" alt=""></span>`;
+          if (grouped) {
+            return `<a class="tools-directory-link tools-directory-link--grouped" href="#" aria-label="${item.title}">${iconMarkup}<span class="tools-directory-text"><strong>${item.input}</strong><span class="tools-directory-targets">to ${item.outputs.join(" / ")}</span></span></a>`;
+          }
+          return `<a class="tools-directory-link" href="#" aria-label="${item.title}">${iconMarkup}<span>${item.title}</span></a>`;
+        };
 
-        const render3DLink = (item) => `
-          <a class="tools-directory-link" href="#" aria-label="${item.label}">
-            <span class="tools-directory-icon"><span class="nav-format-icon" style="width:20px;height:20px;flex:0 0 20px;font-size:8px">${item.icon.slice(0, 3)}</span></span>
-            <span>${item.label}</span>
-          </a>
-        `;
-
-        const renderColumn = (title, items, renderer = renderLink) => `
-          <div class="tools-directory-group">
+        const renderColumn = (title, items, grouped = false) => `
+          <div class="tools-directory-group${grouped ? " tools-directory-group--3d" : ""}">
             <h3>${title}</h3>
-            <div class="tools-directory-list">${items.map(renderer).join("")}</div>
+            <div class="tools-directory-list">${items.map((item) => renderLink(item, grouped)).join("")}</div>
           </div>
         `;
 
@@ -4635,7 +4556,9 @@
           renderColumn("Online PDF Tools", onlinePdfItems),
           renderColumn("Conversion Tools", conversionItems),
           renderColumn("Desktop Features", desktopItems),
-          ...conversion3DNavGroups.map((group) => renderColumn(group.title, group.items, render3DLink))
+          renderColumn("Mesh Formats", conversion3DGrouped.filter((item) => item.scene === "mesh"), true),
+          renderColumn("CAD Industrial", conversion3DGrouped.filter((item) => item.scene === "cad"), true),
+          renderColumn("BIM & Architecture", conversion3DGrouped.filter((item) => item.scene === "bim"), true)
         ];
 
         container.innerHTML = `<div class="tools-directory-row">${columns.join("")}</div>`;
@@ -5689,18 +5612,7 @@
         ["Convert to PDF", { de: "In PDF konvertieren", fr: "Convertir en PDF", es: "Convertir a PDF", pt: "Converter para PDF", it: "Converti in PDF", ja: "PDF に変換", ko: "PDF로 변환", "zh-cn": "转换为 PDF", "zh-tw": "轉換為 PDF" }],
         ["Educational Users", { de: "Bildungsnutzer", fr: "Utilisateurs éducatifs", es: "Usuarios educativos", pt: "Usuários educacionais", it: "Utenti didattici", ja: "教育ユーザー", ko: "교육 사용자", "zh-cn": "教育用户", "zh-tw": "教育用戶" }],
         ["Personal Users", { de: "Privatnutzer", fr: "Utilisateurs personnels", es: "Usuarios personales", pt: "Usuários pessoais", it: "Utenti personali", ja: "個人ユーザー", ko: "개인 사용자", "zh-cn": "个人用户", "zh-tw": "個人用戶" }],
-        ["Professional Users", { de: "Professionelle Nutzer", fr: "Utilisateurs professionnels", es: "Usuarios profesionales", pt: "Usuários profissionais", it: "Utenti professionali", ja: "プロユーザー", ko: "전문 사용자", "zh-cn": "专业用户", "zh-tw": "專業用戶" }],
-        ["Mesh Formats", { de: "Mesh-Formate", fr: "Formats maillage", es: "Formatos de malla", pt: "Formatos de malha", it: "Formati mesh", ja: "メッシュ形式", ko: "메시 형식", "zh-cn": "网格格式", "zh-tw": "網格格式" }],
-        ["CAD Industrial", { de: "Industrielles CAD", fr: "CAO industrielle", es: "CAD industrial", pt: "CAD industrial", it: "CAD industriale", ja: "産業 CAD", ko: "산업 CAD", "zh-cn": "工业 CAD", "zh-tw": "工業 CAD" }],
-        ["BIM & Architecture", { de: "BIM & Architektur", fr: "BIM et architecture", es: "BIM y arquitectura", pt: "BIM e arquitetura", it: "BIM e architettura", ja: "BIM・建築", ko: "BIM 및 건축", "zh-cn": "BIM 与建筑", "zh-tw": "BIM 與建築" }],
-        ["Core Mesh Converter", { de: "Kern-Mesh-Konverter", fr: "Convertisseur maillage principal", es: "Convertidor de malla principal", pt: "Conversor de malha principal", it: "Convertitore mesh principale", ja: "コアメッシュ変換", ko: "핵심 메시 변환", "zh-cn": "核心网格转换", "zh-tw": "核心網格轉換" }],
-        ["Extended Mesh Converter", { de: "Erweiterter Mesh-Konverter", fr: "Convertisseur maillage étendu", es: "Convertidor de malla extendida", pt: "Conversor de malha estendida", it: "Convertitore mesh esteso", ja: "拡張メッシュ変換", ko: "확장 메시 변환", "zh-cn": "扩展网格转换", "zh-tw": "擴展網格轉換" }],
-        ["STEP Converter", { de: "STEP-Konverter", fr: "Convertisseur STEP", es: "Convertidor STEP", pt: "Conversor STEP", it: "Convertitore STEP", ja: "STEP 変換", ko: "STEP 변환", "zh-cn": "STEP 转换", "zh-tw": "STEP 轉換" }],
-        ["IGES Converter", { de: "IGES-Konverter", fr: "Convertisseur IGES", es: "Convertidor IGES", pt: "Conversor IGES", it: "Convertitore IGES", ja: "IGES 変換", ko: "IGES 변환", "zh-cn": "IGES 转换", "zh-tw": "IGES 轉換" }],
-        ["MCAD Converter", { de: "MCAD-Konverter", fr: "Convertisseur MCAD", es: "Convertidor MCAD", pt: "Conversor MCAD", it: "Convertitore MCAD", ja: "MCAD 変換", ko: "MCAD 변환", "zh-cn": "MCAD 转换", "zh-tw": "MCAD 轉換" }],
-        ["CAD Kernel Converter", { de: "CAD-Kernel-Konverter", fr: "Convertisseur noyau CAO", es: "Convertidor de kernel CAD", pt: "Conversor de kernel CAD", it: "Convertitore kernel CAD", ja: "CAD カーネル変換", ko: "CAD 커널 변환", "zh-cn": "CAD 内核转换", "zh-tw": "CAD 內核轉換" }],
-        ["BIM Converter", { de: "BIM-Konverter", fr: "Convertisseur BIM", es: "Convertidor BIM", pt: "Conversor BIM", it: "Convertitore BIM", ja: "BIM 変換", ko: "BIM 변환", "zh-cn": "BIM 转换", "zh-tw": "BIM 轉換" }],
-        ["AEC Converter", { de: "AEC-Konverter", fr: "Convertisseur AEC", es: "Convertidor AEC", pt: "Conversor AEC", it: "Convertitore AEC", ja: "AEC 変換", ko: "AEC 변환", "zh-cn": "AEC 转换", "zh-tw": "AEC 轉換" }]
+        ["Professional Users", { de: "Professionelle Nutzer", fr: "Utilisateurs professionnels", es: "Usuarios profesionales", pt: "Usuários profissionais", it: "Utenti professionali", ja: "プロユーザー", ko: "전문 사용자", "zh-cn": "专业用户", "zh-tw": "專業用戶" }]
       ].forEach(([source, values]) => addTranslation(source, values));
 
       [
