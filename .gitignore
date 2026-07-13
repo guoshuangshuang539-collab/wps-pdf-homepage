@@ -1,3 +1,4 @@
-scripts/
+scripts/*.py
 design-qa.md
 _tmp_check.js
+.DS_Store

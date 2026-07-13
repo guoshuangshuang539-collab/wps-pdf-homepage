@@ -4305,7 +4305,7 @@
 
       <section class="tools-directory" aria-labelledby="tools-directory-title">
         <div class="tools-directory-inner">
-          <h2 id="tools-directory-title">All WPS PDF Tools</h2>
+          <h2 id="tools-directory-title">All online Tools</h2>
           <div class="tools-directory-sections" data-tools-directory></div>
         </div>
       </section>
@@ -4366,7 +4366,10 @@
       </div>
     </footer>
 
+    <script src="scripts/tool-routes.js"></script>
     <script>
+      const toolHref = (title) => (window.WPSToolRoutes ? WPSToolRoutes.getPageForTool(title) : "#");
+
       const tools = [
         { title: "PDF to Word", desc: "Convert PDF files to editable Word documents in seconds (doc, docx formats)", icon: "PDF to Word.svg", bg: "pdf to Word.png", fg: "#00152a" },
         { title: "PDF to Excel", desc: "Convert PDF files to editable Excel spreadsheets online without downloading any software", icon: "PDF to Excel.svg", bg: "PDF to Excel.png", fg: "#002a1e" },
@@ -4542,7 +4545,7 @@
           if (grouped) {
             return `<a class="tools-directory-link tools-directory-link--grouped" href="#" aria-label="${item.title}">${iconMarkup}<span class="tools-directory-text"><strong>${item.input}</strong><span class="tools-directory-targets">to ${item.outputs.join(" / ")}</span></span></a>`;
           }
-          return `<a class="tools-directory-link" href="#" aria-label="${item.title}">${iconMarkup}<span>${item.title}</span></a>`;
+          return `<a class="tools-directory-link" href="${toolHref(item.title)}" aria-label="${item.title}">${iconMarkup}<span>${item.title}</span></a>`;
         };
 
         const renderColumn = (title, items, grouped = false) => `
@@ -4610,7 +4613,7 @@
         const gradient = dockGradients[tool.bg] || ["#eef2f7", "#dde6f3", "#cbd8ea", "#f8f9fc", "#dce7f6"];
         const gradientStyle = gradient.map((color, index) => `--dock-grad-${index + 1}:${color}`).join(";");
         return `
-          <a class="dock-item" href="#" draggable="false" data-title="${tool.title}" data-title-source="${tool.title}" data-desc-source="${tool.desc}" ${tool.badge ? `data-badge-source="${tool.badge}"` : ""} aria-label="${tool.title}. ${tool.desc}" style="${gradientStyle}">
+          <a class="dock-item" href="${toolHref(tool.title)}" draggable="false" data-title="${tool.title}" data-title-source="${tool.title}" data-desc-source="${tool.desc}" ${tool.badge ? `data-badge-source="${tool.badge}"` : ""} aria-label="${tool.title}. ${tool.desc}" style="${gradientStyle}">
             <span class="dock-tooltip">${tool.title}</span>
             <span class="dock-icon-stack" aria-hidden="true">
               <span class="dock-icon-shell">
@@ -5160,7 +5163,7 @@
                 <div class="lab-tool-copy">
                   <h3 data-i18n-key="${tool.title}">${tool.title}</h3>
                   <p data-i18n-key="${tool.desc}">${tool.desc}</p>
-                  <a class="lab-tool-link" href="#" aria-label="Open ${tool.title}">
+                  <a class="lab-tool-link" href="${toolHref(tool.title)}" aria-label="Open ${tool.title}">
                     <span data-i18n-key="Try this tool">Try this tool</span>
                     <span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
                   </a>
@@ -5598,7 +5601,7 @@
         ["Tools", { de: "Werkzeuge", fr: "Outils", es: "Herramientas", pt: "Ferramentas", it: "Strumenti", ja: "ツール", ko: "도구", "zh-cn": "工具", "zh-tw": "工具" }],
         ["3D Conversion", { de: "3D-Konvertierung", fr: "Conversion 3D", es: "Conversión 3D", pt: "Conversão 3D", it: "Conversione 3D", ja: "3D 変換", ko: "3D 변환", "zh-cn": "3D 格式转换", "zh-tw": "3D 格式轉換" }],
         ["Why Choose WPS PDF?", { de: "Warum WPS PDF?", fr: "Pourquoi WPS PDF ?", es: "¿Por qué WPS PDF?", pt: "Por que WPS PDF?", it: "Perché WPS PDF?", ja: "WPS PDF が選ばれる理由", ko: "WPS PDF를 선택하는 이유", "zh-cn": "为何选择 WPS PDF？", "zh-tw": "為何選擇 WPS PDF？" }],
-        ["All WPS PDF Tools", { de: "Alle WPS PDF Tools", fr: "Tous les outils WPS PDF", es: "Todas las herramientas WPS PDF", pt: "Todas as ferramentas WPS PDF", it: "Tutti gli strumenti WPS PDF", ja: "WPS PDF ツール一覧", ko: "모든 WPS PDF 도구", "zh-cn": "全部 WPS PDF 工具", "zh-tw": "全部 WPS PDF 工具" }],
+        ["All online Tools", { de: "Alle Online-Tools", fr: "Tous les outils en ligne", es: "Todas las herramientas en línea", pt: "Todas as ferramentas online", it: "Tutti gli strumenti online", ja: "オンラインツール一覧", ko: "모든 온라인 도구", "zh-cn": "全部在线工具", "zh-tw": "全部線上工具" }],
         ["Desktop", { de: "Desktop", fr: "Bureau", es: "Escritorio", pt: "Desktop", it: "Desktop", ja: "デスクトップ", ko: "데스크톱", "zh-cn": "桌面端", "zh-tw": "桌面版" }],
         ["Blog", { de: "Blog", fr: "Blog", es: "Blog", pt: "Blog", it: "Blog", ja: "ブログ", ko: "블로그", "zh-cn": "博客", "zh-tw": "部落格" }],
         ["Pricing", { de: "Preise", fr: "Tarifs", es: "Precios", pt: "Preços", it: "Prezzi", ja: "料金", ko: "요금", "zh-cn": "价格", "zh-tw": "價格" }],
@@ -5926,6 +5929,7 @@
         savedLanguage = "en";
       }
       setLanguage(savedLanguage);
+      window.WPSToolRoutes?.wireHomepage(document);
     </script>
   </body>
 </html>
