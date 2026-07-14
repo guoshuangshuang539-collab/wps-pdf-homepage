@@ -1,10 +1,11 @@
 /**
  * Demo routing: which tool opens which experience page.
+ * Prefers WPSToolCatalog; keeps compress/convert demo aliases for backward compat.
  */
 (function (global) {
   const PAGES = {
-    compress: "tool-compress-demo.html",
-    convert: "tool-convert-demo.html"
+    compress: "tools/compress-pdf.html",
+    convert: "tools/convert-pdf.html"
   };
 
   const CONVERT_TOOLS = new Set([
@@ -16,14 +17,27 @@
 
   const THREE_D_HUBS = new Set(["Mesh Converter", "CAD Converter", "BIM Converter"]);
 
+  function resolveHref(pagePath) {
+    if (!pagePath) return "#";
+    if (global.WPSToolCatalog?.resolvePage) {
+      return global.WPSToolCatalog.resolvePage(pagePath);
+    }
+    return pagePath;
+  }
+
   function getPageForTool(title) {
     const t = (title || "").trim();
+    if (!t) return "#";
+
+    const fromCatalog = global.WPSToolCatalog?.pageForTitle?.(t);
+    if (fromCatalog) return fromCatalog;
+
     if (THREE_D_HUBS.has(t) && global.WPSFormatHubs3D) {
       const hub = global.WPSFormatHubs3D.getHub(t);
-      if (hub) return global.WPSFormatHubs3D.pageForHub(hub.id);
+      if (hub) return resolveHref(global.WPSFormatHubs3D.pageForHub(hub.id));
     }
-    if (CONVERT_TOOLS.has(t)) return PAGES.convert;
-    return PAGES.compress;
+    if (CONVERT_TOOLS.has(t)) return resolveHref(PAGES.convert);
+    return resolveHref(PAGES.compress);
   }
 
   function wireHomepage(root) {
@@ -33,6 +47,7 @@
     root.querySelectorAll(".nav-menu-link").forEach((link) => {
       const hubId = link.getAttribute("data-3d-hub");
       if (hubId && global.WPSFormatHubs3D) {
+        // pageForHub already resolvePage()'s — do not rewrite/strip tools/
         link.href = global.WPSFormatHubs3D.pageForHub(hubId);
         return;
       }
@@ -57,5 +72,5 @@
     });
   }
 
-  global.WPSToolRoutes = { PAGES, CONVERT_TOOLS, THREE_D_HUBS, getPageForTool, wireHomepage };
+  global.WPSToolRoutes = { PAGES, CONVERT_TOOLS, THREE_D_HUBS, getPageForTool, wireHomepage, resolveHref };
 })(typeof window !== "undefined" ? window : globalThis);

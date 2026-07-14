@@ -40,6 +40,10 @@
     { title: "Protect PDF", icon: "convert-pdf.svg" }
   ];
 
+  function assetBase() {
+    return global.WPSToolCatalog?.assetBase?.() || global.WPSSiteChrome?.assetBase?.() || "";
+  }
+
   function href(title) {
     return global.WPSToolRoutes ? WPSToolRoutes.getPageForTool(title) : "#";
   }
@@ -52,7 +56,8 @@
 
   function renderLink(item) {
     const link = item.href || href(item.title);
-    return `<a class="tools-directory-link" href="${link}" aria-label="${item.title}"><span class="tools-directory-icon"><img src="images/tools-icon/${encodeURIComponent(item.icon || "convert-pdf.svg")}" alt=""></span><span>${item.title}</span></a>`;
+    const iconSrc = `${assetBase()}images/tools-icon/${encodeURIComponent(item.icon || "convert-pdf.svg")}`;
+    return `<a class="tools-directory-link" href="${link}" aria-label="${item.title}"><span class="tools-directory-icon"><img src="${iconSrc}" alt=""></span><span>${item.title}</span></a>`;
   }
 
   function renderHubLink(hub) {

@@ -125,6 +125,37 @@
     });
   }
 
+  function assetBase() {
+    if (global.WPSToolCatalog?.assetBase) return global.WPSToolCatalog.assetBase();
+    const explicit = document.body?.dataset?.assetBase;
+    if (explicit != null) return explicit === "" ? "" : (explicit.endsWith("/") ? explicit : explicit + "/");
+    const path = location.pathname || "";
+    if (/\/tools(?:\/|$)/i.test(path)) return "../";
+    return "";
+  }
+
+  function rewriteChromeAssets(root) {
+    const base = assetBase();
+    if (!base || !root) return;
+    root.querySelectorAll("[src]").forEach((el) => {
+      const src = el.getAttribute("src");
+      if (!src || /^(https?:|data:|\/\/)/i.test(src) || src.startsWith("../") || src.startsWith("/")) return;
+      el.setAttribute("src", base + src);
+    });
+    root.querySelectorAll("[href]").forEach((el) => {
+      const href = el.getAttribute("href");
+      if (!href || href === "#" || /^(https?:|mailto:|tel:|data:|\/\/)/i.test(href) || href.startsWith("../") || href.startsWith("/")) return;
+      if (href.startsWith("tools/")) {
+        el.setAttribute(
+          "href",
+          global.WPSToolCatalog?.resolvePage?.(href) || base + href
+        );
+        return;
+      }
+      el.setAttribute("href", base + href);
+    });
+  }
+
   function parseChromeDoc(html) {
     const doc = new DOMParser().parseFromString(html, "text/html");
     const headerPart = doc.querySelector('[data-chrome-part="header"]');
@@ -135,8 +166,9 @@
   }
 
   async function loadChromeParts() {
+    const base = assetBase();
     try {
-      const res = await fetch("partials/site-chrome.html");
+      const res = await fetch(`${base}partials/site-chrome.html`);
       if (res.ok) return parseChromeDoc(await res.text());
     } catch (_) {}
 
@@ -154,6 +186,8 @@
     if (parts) {
       headerSlot.innerHTML = parts.header;
       footerSlot.innerHTML = parts.footer;
+      rewriteChromeAssets(headerSlot);
+      rewriteChromeAssets(footerSlot);
     }
 
     const header = document.querySelector(".site-header");
@@ -164,6 +198,7 @@
       initMobileMenu(header);
       global.WPSLinks?.wireDownloadTriggers(document.getElementById("site-chrome-header") || header);
       global.WPSSiteNav3D?.render3DNavMenu(document);
+      rewriteChromeAssets(document.querySelector("[data-3d-nav-menu]"));
       global.WPSToolRoutes?.wireHomepage(document);
     }
 
@@ -178,5 +213,5 @@
     global.WPSLinks?.wireDownloadTriggers(document.getElementById("site-chrome-footer") || document);
   }
 
-  global.WPSSiteChrome = { mount };
+  global.WPSSiteChrome = { mount, assetBase, rewriteChromeAssets };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -164,7 +164,14 @@
   }
 
   function pageForHub(hubId) {
-    return `tool-convert-demo.html?hub=${encodeURIComponent(hubId)}`;
+    const map = {
+      mesh: "tools/mesh-converter.html",
+      cad: "tools/cad-converter.html",
+      bim: "tools/bim-converter.html"
+    };
+    const page = map[hubId] || `tools/${hubId}-converter.html`;
+    if (global.WPSToolCatalog?.resolvePage) return global.WPSToolCatalog.resolvePage(page);
+    return page;
   }
 
   global.WPSFormatHubs3D = {

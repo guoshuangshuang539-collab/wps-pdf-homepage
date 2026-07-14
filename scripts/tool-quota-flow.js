@@ -233,7 +233,7 @@
           icon: "download",
           title: "Unlock 3 more uses with WPS Office",
           body: "Download desktop for a <strong>one-time +3 bonus</strong>. Uninstalling won't grant again.",
-          button: "Download Client",
+          button: "Download WPS Office",
           action: "desktop"
         },
         [STAGES.NEED_PREMIUM]: {

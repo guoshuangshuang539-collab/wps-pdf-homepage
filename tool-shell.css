@@ -214,7 +214,116 @@ button { border: 0; font: inherit; cursor: pointer; }
 .process-meta { margin: 0 0 20px; color: var(--soft-muted); font-size: 13px; }
 .progress-track { height: 8px; border-radius: 999px; background: #eceef4; overflow: hidden; margin-bottom: 10px; }
 .progress-bar { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #5948f3, #7b6cf5); transition: width 0.15s linear; }
-.progress-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--soft-muted); }
+.progress-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--soft-muted); }
+.progress-eta { font-weight: 600; color: var(--muted); }
+.progress-hint { margin: 10px 0 0; color: var(--soft-muted); font-size: 12px; line-height: 1.45; }
+
+.eta-banner {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0; padding: 10px 20px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, #f6f4ff, #fafbff);
+  color: var(--muted); font-size: 13px; line-height: 1.4;
+}
+.eta-banner[hidden] { display: none !important; }
+.eta-banner::before {
+  content: "schedule";
+  font-family: "Material Symbols Rounded";
+  font-size: 18px; color: var(--accent);
+}
+.processing-panel.is-long-running .progress-track { height: 10px; }
+.processing-panel.is-long-running .progress-eta { color: var(--accent); font-size: 13px; }
+
+/* Multi-file premium gate (aligned with pdf.wps.com limitTip) */
+.multifile-modal-backdrop {
+  position: fixed; inset: 0; z-index: 1200;
+  display: grid; place-items: center;
+  padding: 24px;
+  background: rgba(18, 19, 23, 0.42);
+  backdrop-filter: blur(2px);
+}
+.multifile-modal-backdrop[hidden] { display: none !important; }
+.multifile-modal {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 28px 28px 24px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.22);
+  text-align: center;
+}
+.multifile-modal-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px; border-radius: 999px;
+  display: grid; place-items: center;
+  color: #9aa0ae; background: transparent;
+}
+.multifile-modal-close:hover { background: #f3f4f8; color: var(--ink); }
+.multifile-modal-art {
+  position: relative;
+  width: 168px; height: 128px;
+  margin: 8px auto 20px;
+}
+.multifile-modal-art .art-window {
+  width: 148px; height: 108px; margin: 0 auto;
+  border-radius: 14px;
+  border: 1px solid #e6e8ef;
+  background: linear-gradient(180deg, #f7f8fc, #eef1f8);
+  box-shadow: 0 10px 24px rgba(89, 72, 243, 0.08);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 16px 14px;
+}
+.multifile-modal-art .art-tile {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #c9d8ff, #8eb0ff);
+  opacity: 0.9;
+}
+.multifile-modal-art .art-lock {
+  position: absolute; right: 8px; bottom: 6px;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #3186ff; color: #fff;
+  box-shadow: 0 6px 14px rgba(49, 134, 255, 0.35);
+}
+.multifile-modal-art .art-lock .material-symbols-rounded { font-size: 20px; }
+.multifile-modal-copy {
+  margin: 0 0 22px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+.multifile-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.multifile-modal-actions .btn-download-free {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  background: #121317; color: #fff; font-size: 14px; font-weight: 500;
+}
+.multifile-modal-actions .btn-download-free:hover { background: #2a2b31; }
+.multifile-modal-actions .btn-start-trial {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  color: #5948f3; font-size: 14px; font-weight: 600;
+  background: #fff;
+  border: 1.5px solid transparent;
+  background-image:
+    linear-gradient(#fff, #fff),
+    linear-gradient(105deg, #7b6cf5, #3186ff);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+.multifile-modal-actions .btn-start-trial:hover { filter: brightness(1.02); }
+.multifile-modal-actions .material-symbols-rounded { font-size: 18px; }
+@media (max-width: 520px) {
+  .multifile-modal-actions { grid-template-columns: 1fr; }
+}
+
 
 .result-icon {
   display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 16px;

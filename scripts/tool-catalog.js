@@ -1,0 +1,493 @@
+/**
+ * Online tool catalog — single source of truth for PDF + 3D conversion pages.
+ * Exposes window.WPSToolCatalog
+ */
+(function (global) {
+  function page(slug) {
+    return `tools/${slug}.html`;
+  }
+
+  const PDF_ACCEPT = ".pdf,application/pdf";
+
+  const TOOLS = {
+    "compress-pdf": {
+      slug: "compress-pdf",
+      title: "Compress PDF",
+      type: "regular",
+      page: page("compress-pdf"),
+      icon: "compress-pdf.svg",
+      materialIcon: "compress",
+      toolVerb: "compress your PDF",
+      pageTitle: "Compress PDF Online for Free",
+      subtitle: "WPS PDF compressor helps reduce PDF file size online without losing quality. Upload, compress, and download securely.",
+      accept: PDF_ACCEPT,
+      showRatio: false,
+      lockFormats: false,
+      related: ["merge-pdf", "split-pdf", "convert-pdf", "pdf-to-word", "signing-pdf"],
+      stepLabels: ["Upload", "Compress", "Download"],
+      continueLabel: "Continue to compress",
+      resultTitle: "Compression complete",
+      downloadLabel: "Download compressed PDF",
+      uploadIcon: "compress"
+    },
+    "split-pdf": {
+      slug: "split-pdf",
+      title: "Split PDF",
+      type: "regular",
+      page: page("split-pdf"),
+      icon: "split-pdf.svg",
+      materialIcon: "call_split",
+      toolVerb: "split your PDF",
+      pageTitle: "Split PDF Online for Free",
+      subtitle: "Split a PDF into multiple files online. Upload once, separate pages, and download the results without installing software.",
+      accept: PDF_ACCEPT,
+      showRatio: false,
+      lockFormats: false,
+      related: ["merge-pdf", "compress-pdf", "convert-pdf", "pdf-to-word", "signing-pdf"],
+      stepLabels: ["Upload", "Split", "Download"],
+      continueLabel: "Continue to split",
+      resultTitle: "Split complete",
+      downloadLabel: "Download split PDF",
+      uploadIcon: "call_split"
+    },
+    "merge-pdf": {
+      slug: "merge-pdf",
+      title: "Merge PDF",
+      type: "regular",
+      page: page("merge-pdf"),
+      icon: "merge-pdf.svg",
+      materialIcon: "merge",
+      toolVerb: "merge your PDFs",
+      pageTitle: "Merge PDF Files Online for Free",
+      subtitle: "Combine multiple PDF files into one document online. Free to try — no desktop install required.",
+      accept: PDF_ACCEPT,
+      showRatio: false,
+      lockFormats: false,
+      related: ["split-pdf", "compress-pdf", "convert-pdf", "pdf-to-word", "signing-pdf"],
+      stepLabels: ["Upload", "Merge", "Download"],
+      continueLabel: "Continue to merge",
+      resultTitle: "Merge complete",
+      downloadLabel: "Download merged PDF",
+      uploadIcon: "merge"
+    },
+    "signing-pdf": {
+      slug: "signing-pdf",
+      title: "Signing PDF",
+      type: "regular",
+      page: page("signing-pdf"),
+      icon: "signing-pdf.svg",
+      materialIcon: "draw",
+      toolVerb: "sign your PDF",
+      pageTitle: "Sign PDF Online for Free",
+      subtitle: "Add an electronic signature to your PDF online. Upload, sign, and download a signed document in a few steps.",
+      accept: PDF_ACCEPT,
+      showRatio: false,
+      lockFormats: false,
+      related: ["compress-pdf", "merge-pdf", "convert-pdf", "pdf-to-word", "split-pdf"],
+      stepLabels: ["Upload", "Sign", "Download"],
+      continueLabel: "Continue to sign",
+      resultTitle: "Signing complete",
+      downloadLabel: "Download signed PDF",
+      uploadIcon: "draw"
+    },
+    "convert-pdf": {
+      slug: "convert-pdf",
+      title: "Convert PDF",
+      type: "pdf-convert",
+      page: page("convert-pdf"),
+      icon: "convert-pdf.svg",
+      materialIcon: "sync_alt",
+      toolVerb: "convert your files",
+      pageTitle: "Free PDF Converter Online",
+      subtitle: "Convert documents to and from PDF. Upload Word, Excel, PPT, PDF, JPG, or XML, choose the output format, and download in seconds.",
+      accept: null,
+      showRatio: false,
+      defaultFrom: "PDF",
+      defaultTo: "Word",
+      lockFormats: false,
+      related: ["pdf-to-word", "word-to-pdf", "compress-pdf", "merge-pdf", "pdf-to-jpg"],
+      stepLabels: ["Choose format", "Upload", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download converted file",
+      uploadIcon: "sync_alt"
+    },
+    "pdf-to-word": {
+      slug: "pdf-to-word",
+      title: "PDF to Word",
+      type: "regular",
+      page: page("pdf-to-word"),
+      icon: "PDF to Word.svg",
+      materialIcon: "description",
+      toolVerb: "convert PDF to Word",
+      pageTitle: "Free PDF to Word Converter Online",
+      subtitle: "Convert PDF files to editable Word documents online. Preserve layout and download DOCX ready to edit.",
+      accept: PDF_ACCEPT,
+      showRatio: false,
+      defaultFrom: "PDF",
+      defaultTo: "Word",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["word-to-pdf", "pdf-to-excel", "pdf-to-ppt", "convert-pdf", "compress-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download Word file",
+      uploadIcon: "description"
+    },
+    "pdf-to-excel": {
+      slug: "pdf-to-excel",
+      title: "PDF to Excel",
+      type: "regular",
+      page: page("pdf-to-excel"),
+      icon: "PDF to Excel.svg",
+      materialIcon: "table_chart",
+      toolVerb: "convert PDF to Excel",
+      pageTitle: "Free PDF to Excel Converter Online",
+      subtitle: "Turn PDF tables into Excel spreadsheets (XLS/XLSX) online. Upload a PDF and download an editable workbook.",
+      accept: PDF_ACCEPT,
+      showRatio: false,
+      defaultFrom: "PDF",
+      defaultTo: "Excel",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["excel-to-pdf", "pdf-to-word", "pdf-to-ppt", "convert-pdf", "compress-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download Excel file",
+      uploadIcon: "table_chart"
+    },
+    "pdf-to-ppt": {
+      slug: "pdf-to-ppt",
+      title: "PDF to PPT",
+      type: "regular",
+      page: page("pdf-to-ppt"),
+      icon: "PDF to PPT.svg",
+      materialIcon: "slideshow",
+      toolVerb: "convert PDF to PPT",
+      pageTitle: "Free PDF to PPT Converter Online",
+      subtitle: "Convert PDF pages into PowerPoint slides online. Free to use in the browser — no install required.",
+      accept: PDF_ACCEPT,
+      showRatio: false,
+      defaultFrom: "PDF",
+      defaultTo: "PPT",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["ppt-to-pdf", "pdf-to-word", "pdf-to-excel", "convert-pdf", "compress-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download PPT file",
+      uploadIcon: "slideshow"
+    },
+    "pdf-to-jpg": {
+      slug: "pdf-to-jpg",
+      title: "PDF to JPG",
+      type: "regular",
+      page: page("pdf-to-jpg"),
+      icon: "PDF to JPG.svg",
+      materialIcon: "image",
+      toolVerb: "convert PDF to JPG",
+      pageTitle: "Free PDF to JPG Converter Online",
+      subtitle: "Export PDF pages as high-quality JPG images online. Batch-friendly conversion with a simple download.",
+      accept: PDF_ACCEPT,
+      showRatio: false,
+      defaultFrom: "PDF",
+      defaultTo: "JPG",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["jpg-to-pdf", "jpg-to-word", "pdf-to-word", "convert-pdf", "compress-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download JPG file",
+      uploadIcon: "image"
+    },
+    "word-to-pdf": {
+      slug: "word-to-pdf",
+      title: "Word to PDF",
+      type: "regular",
+      page: page("word-to-pdf"),
+      icon: "Word to PDF.svg",
+      materialIcon: "picture_as_pdf",
+      toolVerb: "convert Word to PDF",
+      pageTitle: "Free Word to PDF Converter Online",
+      subtitle: "Convert DOC/DOCX files to PDF online while keeping fonts and layout. Upload Word, download PDF.",
+      accept: ".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      showRatio: false,
+      defaultFrom: "Word",
+      defaultTo: "PDF",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["pdf-to-word", "excel-to-pdf", "ppt-to-pdf", "convert-pdf", "word-to-jpg"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download PDF",
+      uploadIcon: "picture_as_pdf"
+    },
+    "excel-to-pdf": {
+      slug: "excel-to-pdf",
+      title: "Excel to PDF",
+      type: "regular",
+      page: page("excel-to-pdf"),
+      icon: "Excel to PDF.svg",
+      materialIcon: "picture_as_pdf",
+      toolVerb: "convert Excel to PDF",
+      pageTitle: "Free Excel to PDF Converter Online",
+      subtitle: "Convert Excel spreadsheets to PDF online for easy sharing and printing. Upload XLS/XLSX and download PDF.",
+      accept: ".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      showRatio: false,
+      defaultFrom: "Excel",
+      defaultTo: "PDF",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["pdf-to-excel", "word-to-pdf", "ppt-to-pdf", "convert-pdf", "compress-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download PDF",
+      uploadIcon: "picture_as_pdf"
+    },
+    "ppt-to-pdf": {
+      slug: "ppt-to-pdf",
+      title: "PPT to PDF",
+      type: "regular",
+      page: page("ppt-to-pdf"),
+      icon: "PPT to PDF.svg",
+      materialIcon: "picture_as_pdf",
+      toolVerb: "convert PPT to PDF",
+      pageTitle: "Free PPT to PDF Converter Online",
+      subtitle: "Convert PowerPoint presentations to PDF online. Keep slide layout intact and download a shareable PDF.",
+      accept: ".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      showRatio: false,
+      defaultFrom: "PPT",
+      defaultTo: "PDF",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["pdf-to-ppt", "word-to-pdf", "excel-to-pdf", "convert-pdf", "compress-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download PDF",
+      uploadIcon: "picture_as_pdf"
+    },
+    "jpg-to-pdf": {
+      slug: "jpg-to-pdf",
+      title: "JPG to PDF",
+      type: "regular",
+      page: page("jpg-to-pdf"),
+      icon: "JPG to PDF.svg",
+      materialIcon: "picture_as_pdf",
+      toolVerb: "convert JPG to PDF",
+      pageTitle: "Free JPG to PDF Converter Online",
+      subtitle: "Turn JPG or PNG images into a single PDF online. Upload images and download a neat PDF document.",
+      accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
+      showRatio: false,
+      defaultFrom: "JPG",
+      defaultTo: "PDF",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["pdf-to-jpg", "jpg-to-word", "word-to-pdf", "convert-pdf", "compress-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download PDF",
+      uploadIcon: "picture_as_pdf"
+    },
+    "xml-to-pdf": {
+      slug: "xml-to-pdf",
+      title: "XML to PDF",
+      type: "regular",
+      page: page("xml-to-pdf"),
+      icon: "xml to PDF.svg",
+      materialIcon: "code",
+      toolVerb: "convert XML to PDF",
+      pageTitle: "Free XML to PDF Converter Online",
+      subtitle: "Convert XML files to readable PDF documents online. Upload XML and download a formatted PDF.",
+      accept: ".xml,application/xml,text/xml",
+      showRatio: false,
+      defaultFrom: "XML",
+      defaultTo: "PDF",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["word-to-pdf", "convert-pdf", "jpg-to-pdf", "compress-pdf", "merge-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download PDF",
+      uploadIcon: "code"
+    },
+    "word-to-jpg": {
+      slug: "word-to-jpg",
+      title: "Word to JPG",
+      type: "regular",
+      page: page("word-to-jpg"),
+      icon: "Word to jpg.svg",
+      materialIcon: "image",
+      toolVerb: "convert Word to JPG",
+      pageTitle: "Free Word to JPG Converter Online",
+      subtitle: "Convert Word documents into JPG images online. Upload DOC/DOCX and download image pages for sharing.",
+      accept: ".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      showRatio: false,
+      defaultFrom: "Word",
+      defaultTo: "JPG",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["jpg-to-word", "word-to-pdf", "pdf-to-jpg", "convert-pdf", "jpg-to-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download JPG file",
+      uploadIcon: "image"
+    },
+    "jpg-to-word": {
+      slug: "jpg-to-word",
+      title: "JPG to Word",
+      type: "regular",
+      page: page("jpg-to-word"),
+      icon: "JPG to Word.svg",
+      materialIcon: "description",
+      toolVerb: "convert JPG to Word",
+      pageTitle: "Free JPG to Word Converter Online",
+      subtitle: "Convert JPG images to editable Word documents online. Upload an image and download a DOC/DOCX file.",
+      accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
+      showRatio: false,
+      defaultFrom: "JPG",
+      defaultTo: "Word",
+      lockFormats: true,
+      fixedPair: true,
+      related: ["word-to-jpg", "jpg-to-pdf", "pdf-to-word", "convert-pdf", "word-to-pdf"],
+      stepLabels: ["Upload", "Convert", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download Word file",
+      uploadIcon: "description"
+    },
+    "mesh-converter": {
+      slug: "mesh-converter",
+      title: "Mesh Converter",
+      type: "3d-conversion",
+      page: page("mesh-converter"),
+      icon: "convert-pdf.svg",
+      materialIcon: "view_in_ar",
+      toolVerb: "convert your mesh files",
+      pageTitle: "Mesh Converter Online",
+      subtitle: "Convert mesh formats online (OBJ, STL, FBX, GLB/GLTF, and more). Upload → convert → download with progress and ETA.",
+      accept: null,
+      showRatio: false,
+      defaultFrom: "OBJ",
+      defaultTo: "STL",
+      lockFormats: false,
+      hubId: "mesh",
+      etaRange: "10s–2 min",
+      related: ["cad-converter", "bim-converter", "convert-pdf", "compress-pdf", "merge-pdf"],
+      stepLabels: ["Choose format", "Upload", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download converted file",
+      uploadIcon: "view_in_ar"
+    },
+    "cad-converter": {
+      slug: "cad-converter",
+      title: "CAD Converter",
+      type: "3d-conversion",
+      page: page("cad-converter"),
+      icon: "convert-pdf.svg",
+      materialIcon: "architecture",
+      toolVerb: "convert your CAD files",
+      pageTitle: "CAD Converter Online",
+      subtitle: "Convert industrial CAD formats to STEP or mesh outputs. Typical time 30s–5 min depending on model size.",
+      accept: null,
+      showRatio: false,
+      defaultFrom: "STEP",
+      defaultTo: "GLB/GLTF",
+      lockFormats: false,
+      hubId: "cad",
+      etaRange: "30s–5 min",
+      related: ["mesh-converter", "bim-converter", "convert-pdf", "compress-pdf", "merge-pdf"],
+      stepLabels: ["Choose format", "Upload", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download converted file",
+      uploadIcon: "architecture"
+    },
+    "bim-converter": {
+      slug: "bim-converter",
+      title: "BIM Converter",
+      type: "3d-conversion",
+      page: page("bim-converter"),
+      icon: "convert-pdf.svg",
+      materialIcon: "apartment",
+      toolVerb: "convert your BIM files",
+      pageTitle: "BIM Converter Online",
+      subtitle: "Convert BIM and architecture formats (IFC, Revit, AutoCAD, and more) to mesh outputs for visualization and sharing.",
+      accept: null,
+      showRatio: false,
+      defaultFrom: "IFC",
+      defaultTo: "GLB/GLTF",
+      lockFormats: false,
+      hubId: "bim",
+      etaRange: "1–10 min",
+      related: ["mesh-converter", "cad-converter", "convert-pdf", "compress-pdf", "merge-pdf"],
+      stepLabels: ["Choose format", "Upload", "Download"],
+      continueLabel: "Continue to convert",
+      resultTitle: "Conversion complete",
+      downloadLabel: "Download converted file",
+      uploadIcon: "apartment"
+    }
+  };
+
+  function assetBase() {
+    const explicit = document.body?.dataset?.assetBase;
+    if (explicit != null && explicit !== "") return explicit.endsWith("/") ? explicit : explicit + "/";
+    if (explicit === "") return "";
+    const path = (typeof location !== "undefined" && location.pathname) || "";
+    if (/\/tools(?:\/|$)/i.test(path)) return "../";
+    return "";
+  }
+
+  function resolvePage(pagePath) {
+    if (!pagePath) return "#";
+    if (/^https?:\/\//i.test(pagePath) || pagePath.startsWith("#") || pagePath.startsWith("mailto:")) {
+      return pagePath;
+    }
+    // Already site-absolute or parent-relative — do not rewrite again.
+    if (pagePath.startsWith("/") || pagePath.startsWith("../")) return pagePath;
+
+    const base = assetBase();
+    // Canonical paths are site-root relative: "tools/foo.html", "homepage.html", "images/..."
+    // From tools/* pages, prefix "../" so links stay under /tools/ (never strip tools/).
+    return base + pagePath;
+  }
+
+  function getBySlug(slug) {
+    return TOOLS[slug] || null;
+  }
+
+  function getByTitle(title) {
+    const t = (title || "").trim();
+    if (!t) return null;
+    return Object.values(TOOLS).find((tool) => tool.title === t) || null;
+  }
+
+  function pageForTitle(title) {
+    const tool = getByTitle(title);
+    return tool ? resolvePage(tool.page) : null;
+  }
+
+  function allOnlineTools() {
+    return Object.values(TOOLS);
+  }
+
+  global.WPSToolCatalog = {
+    TOOLS,
+    getBySlug,
+    getByTitle,
+    pageForTitle,
+    allOnlineTools,
+    assetBase,
+    resolvePage
+  };
+})(typeof window !== "undefined" ? window : globalThis);

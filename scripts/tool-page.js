@@ -12,7 +12,9 @@
 
   function extForFormat(fmt) {
     const map = {
-      PDF: "pdf", Word: "docx", Excel: "xlsx", PPT: "pptx", JPG: "jpg", XML: "xml"
+      PDF: "pdf", Word: "docx", Excel: "xlsx", PPT: "pptx", JPG: "jpg", XML: "xml",
+      OBJ: "obj", STL: "stl", FBX: "fbx", "GLB/GLTF": "glb", DAE: "dae", "3MF": "3mf", PLY: "ply",
+      STEP: "step"
     };
     return map[fmt] || "bin";
   }
@@ -25,7 +27,15 @@
       pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       jpg: "image/jpeg",
       xml: "application/xml",
-      txt: "text/plain"
+      txt: "text/plain",
+      obj: "model/obj",
+      stl: "model/stl",
+      fbx: "application/octet-stream",
+      glb: "model/gltf-binary",
+      dae: "model/vnd.collada+xml",
+      "3mf": "model/3mf",
+      ply: "application/x-ply",
+      step: "application/step"
     };
     return map[ext] || "application/octet-stream";
   }
@@ -33,6 +43,15 @@
   function makeRtfFromName(name, from, to) {
     const text = `Converted from ${name} (${from} to ${to}) using WPS PDF Tools demo.`;
     return new Blob([`{\\rtf1\\ansi ${text.replace(/\\/g, "\\\\")} }`], { type: "application/rtf" });
+  }
+
+  function formatEta(seconds) {
+    const s = Math.max(0, Math.ceil(Number(seconds) || 0));
+    if (s <= 0) return "Almost done…";
+    if (s < 60) return `~${s}s remaining`;
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return rem ? `~${m}m ${rem}s remaining` : `~${m}m remaining`;
   }
 
   async function simulateUpload(onProgress, file) {
@@ -51,14 +70,15 @@
     });
   }
 
-  async function simulateProcessing(onProgress, durationMs) {
+  async function simulateProcessing(onProgress, durationMs, phaseHint) {
     const start = performance.now();
     return new Promise((resolve) => {
       const tick = () => {
         const elapsed = performance.now() - start;
         const p = Math.min(1, elapsed / durationMs);
         const remaining = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
-        const phase = p < 0.15 ? "Preparing" : p < 0.85 ? "Processing" : "Finalizing";
+        const phase = phaseHint
+          || (p < 0.15 ? "Preparing" : p < 0.85 ? "Processing" : "Finalizing");
         onProgress({ percent: Math.round(p * 100), eta: remaining, phase });
         if (p >= 1) resolve();
         else requestAnimationFrame(tick);
@@ -68,7 +88,7 @@
   }
 
   async function processCompress(file, ratio, onProgress) {
-    await simulateProcessing(onProgress, 2200 + Math.min(file.size / 8000, 1800));
+    await simulateProcessing(onProgress, 2200 + Math.min(file.size / 8000, 1800), "Compressing");
     const reduction = ratio === "Smallest" ? 0.55 : ratio === "Recommended" ? 0.72 : 0.88;
     const outSize = Math.max(1024, Math.round(file.size * reduction));
     const buffer = await file.arrayBuffer();
@@ -86,8 +106,19 @@
     };
   }
 
-  async function processConvert(file, from, to, onProgress) {
-    await simulateProcessing(onProgress, 2600 + Math.min(file.size / 6000, 2000));
+  function convertDurationMs(file, profile) {
+    // Profiles mirror 3D capability inventory typical ranges (scaled for demo UX).
+    if (profile === "mesh") return 4500 + Math.min(file.size / 4000, 12000);
+    if (profile === "cad") return 7000 + Math.min(file.size / 3000, 18000);
+    if (profile === "bim") return 9000 + Math.min(file.size / 2500, 22000);
+    return 2600 + Math.min(file.size / 6000, 2000);
+  }
+
+  async function processConvert(file, from, to, onProgress, options) {
+    const profile = options?.etaProfile || "pdf";
+    const duration = convertDurationMs(file, profile);
+    const phaseHint = profile === "pdf" ? "Converting" : "Converting 3D model";
+    await simulateProcessing(onProgress, duration, phaseHint);
     const base = file.name.replace(/\.[^.]+$/, "") || "document";
     const outExt = extForFormat(to);
     let blob;
@@ -112,7 +143,7 @@
     return {
       blob,
       filename,
-      stats: { from, to, originalSize: file.size, outputSize: blob.size }
+      stats: { from, to, originalSize: file.size, outputSize: blob.size, etaProfile: profile }
     };
   }
 
@@ -175,7 +206,87 @@
     let lastResultUrl = null;
     let selectedRatio = "Recommended";
     let pendingFile = null;
+    let pendingFiles = [];
     let workflowView = "upload";
+    const longRunning = Boolean(config.longRunning);
+    const etaProfile = config.etaProfile || "pdf";
+    const progressHint =
+      config.progressHint
+      || (etaProfile === "mesh"
+        ? "Typical mesh conversion takes about 10s–2 min. Please keep this tab open."
+        : etaProfile === "cad"
+          ? "Typical CAD conversion takes about 30s–5 min. Please keep this tab open."
+          : etaProfile === "bim"
+            ? "Typical BIM conversion takes about 1–10 min. Please keep this tab open."
+            : "");
+
+    function ensureMultiFileModal() {
+      let backdrop = document.getElementById("multifile-modal");
+      if (backdrop) return backdrop;
+      backdrop = document.createElement("div");
+      backdrop.id = "multifile-modal";
+      backdrop.className = "multifile-modal-backdrop";
+      backdrop.hidden = true;
+      backdrop.setAttribute("role", "dialog");
+      backdrop.setAttribute("aria-modal", "true");
+      backdrop.setAttribute("aria-labelledby", "multifile-modal-title");
+      backdrop.innerHTML = `
+        <div class="multifile-modal">
+          <button class="multifile-modal-close" type="button" aria-label="Close" data-multifile-close>
+            <span class="material-symbols-rounded">close</span>
+          </button>
+          <div class="multifile-modal-art" aria-hidden="true">
+            <div class="art-window">
+              <span class="art-tile"></span><span class="art-tile"></span><span class="art-tile"></span>
+              <span class="art-tile"></span><span class="art-tile"></span><span class="art-tile"></span>
+            </div>
+            <span class="art-lock"><span class="material-symbols-rounded">lock</span></span>
+          </div>
+          <p class="multifile-modal-copy" id="multifile-modal-title">
+            Free users can process only 1 file every time. Upgrade to WPS Pro+ and enjoy unlimited PDF features now!
+          </p>
+          <div class="multifile-modal-actions">
+            <button class="btn-download-free" type="button" data-multifile-download>
+              <span class="material-symbols-rounded">download</span>
+              Free Download
+            </button>
+            <button class="btn-start-trial" type="button" data-multifile-trial>
+              <span class="material-symbols-rounded">diamond</span>
+              Start Free Trial
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+      backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop || e.target.closest("[data-multifile-close]")) closeMultiFileModal();
+      });
+      backdrop.querySelector("[data-multifile-download]")?.addEventListener("click", () => {
+        Links()?.openDownload("auto");
+        closeMultiFileModal();
+      });
+      backdrop.querySelector("[data-multifile-trial]")?.addEventListener("click", () => {
+        Links()?.openPremium();
+        Q.upgradePremium();
+        closeMultiFileModal();
+        resetResult();
+        renderUI();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !backdrop.hidden) closeMultiFileModal();
+      });
+      return backdrop;
+    }
+
+    function openMultiFileModal() {
+      const modal = ensureMultiFileModal();
+      modal.hidden = false;
+    }
+
+    function closeMultiFileModal() {
+      const modal = document.getElementById("multifile-modal");
+      if (modal) modal.hidden = true;
+    }
 
     function scrollToLoginGate() {
       const gate = document.getElementById("login-gate");
@@ -222,8 +333,17 @@
     function updateProgressUI({ percent, eta, phase }) {
       els.progressBar.style.width = percent + "%";
       els.progressPercent.textContent = percent + "%";
-      els.progressEta.textContent = eta > 0 ? `~${eta}s remaining` : "Almost done…";
+      if (els.progressEta) {
+        els.progressEta.textContent = formatEta(eta);
+        els.progressEta.classList.add("progress-eta");
+      }
       els.progressPhase.textContent = phase;
+      els.processingPanel?.classList.toggle("is-long-running", longRunning && workflowView === "processing");
+      if (els.progressHint) {
+        const showHint = longRunning && workflowView === "processing" && progressHint;
+        els.progressHint.hidden = !showHint;
+        if (showHint) els.progressHint.textContent = progressHint;
+      }
     }
 
     function updateSteps(active) {
@@ -249,6 +369,7 @@
 
     function clearPendingFile() {
       pendingFile = null;
+      pendingFiles = [];
     }
 
     function renderUI() {
@@ -349,20 +470,37 @@
         return;
       }
 
-      const file = files[0];
-      if (!file) return;
+      const list = Array.from(files || []).filter(Boolean);
+      if (!list.length) return;
 
+      const state = Q.getState();
+      if (list.length > 1 && !state.isPremium) {
+        openMultiFileModal();
+        return;
+      }
+
+      pendingFiles = list;
+      const file = list[0];
       pendingFile = file;
       setView("uploading");
       updateSteps(config.mode === "compress" ? 0 : 1);
-      els.processFilename.textContent = file.name;
+      const batchLabel = list.length > 1 ? ` · ${list.length} files` : "";
+      els.processFilename.textContent = file.name + batchLabel;
       els.processFilesize.textContent = formatBytes(file.size);
       els.progressBar.style.width = "0%";
+      if (els.progressHint) els.progressHint.hidden = true;
 
       try {
         await simulateUpload(updateProgressUI, file);
-        if (els.uploadSuccessFilename) els.uploadSuccessFilename.textContent = file.name;
-        if (els.uploadSuccessFilesize) els.uploadSuccessFilesize.textContent = formatBytes(file.size);
+        if (els.uploadSuccessFilename) {
+          els.uploadSuccessFilename.textContent = list.length > 1
+            ? `${list.length} files ready`
+            : file.name;
+        }
+        if (els.uploadSuccessFilesize) {
+          const total = list.reduce((sum, item) => sum + item.size, 0);
+          els.uploadSuccessFilesize.textContent = formatBytes(total);
+        }
         setView("upload-success");
         updateSteps(config.mode === "compress" ? 0 : 1);
       } catch (err) {
@@ -401,24 +539,32 @@
       }
 
       const file = pendingFile;
+      const batch = pendingFiles.length ? pendingFiles : [file];
       setView("processing");
       updateSteps(config.mode === "compress" ? 1 : 2);
-      els.processFilename.textContent = file.name;
-      els.processFilesize.textContent = formatBytes(file.size);
       els.progressBar.style.width = "0%";
       els.progressPhase.textContent = config.processingLabel || (config.mode === "compress" ? "Compressing" : "Converting");
 
       try {
         let result;
-        if (config.mode === "compress") {
-          result = await processCompress(file, selectedRatio, updateProgressUI);
-        } else {
-          result = await processConvert(file, config.getFormats().from, config.getFormats().to, updateProgressUI);
+        for (let i = 0; i < batch.length; i += 1) {
+          const current = batch[i];
+          const prefix = batch.length > 1 ? `File ${i + 1}/${batch.length}: ` : "";
+          els.processFilename.textContent = prefix + current.name;
+          els.processFilesize.textContent = formatBytes(current.size);
+          if (config.mode === "compress") {
+            result = await processCompress(current, selectedRatio, updateProgressUI);
+          } else {
+            const formats = config.getFormats();
+            result = await processConvert(current, formats.from, formats.to, updateProgressUI, { etaProfile });
+          }
         }
 
         clearPendingFile();
         lastResultUrl = URL.createObjectURL(result.blob);
-        els.resultFilename.textContent = result.filename;
+        els.resultFilename.textContent = batch.length > 1
+          ? `${result.filename} (+${batch.length - 1} more)`
+          : result.filename;
         if (result.stats.ratio) {
           els.resultStats.innerHTML = `
             <span>Original: ${formatBytes(result.stats.originalSize)}</span>
@@ -429,6 +575,7 @@
           els.resultStats.innerHTML = `
             <span>${result.stats.from} → ${result.stats.to}</span>
             <span>Output: ${formatBytes(result.stats.outputSize)}</span>
+            ${batch.length > 1 ? `<span>${batch.length} files processed</span>` : ""}
           `;
         }
         els.downloadBtn.href = lastResultUrl;

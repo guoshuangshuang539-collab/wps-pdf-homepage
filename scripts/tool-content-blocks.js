@@ -1,5 +1,6 @@
 /**
  * Reusable homepage-style content blocks for tool inner pages.
+ * Prefers WPSToolContentLibrary per-slug content when available.
  */
 (function (global) {
   const CONTENT = {
@@ -48,7 +49,7 @@
         ]
       },
       blog: {
-        title: 'Learn More About Compress PDF Online for Free',
+        title: "Learn More About Compress PDF Online for Free",
         moreHref: "https://pdf.wps.com/blog/",
         articles: [
           {
@@ -128,6 +129,13 @@
     }
   };
 
+  const LEGACY_KEY = {
+    "compress-pdf": "compress",
+    compress: "compress",
+    "convert-pdf": "convert",
+    convert: "convert"
+  };
+
   const RELATED_TOOLS = [
     { title: "Compress PDF", icon: "compress" },
     { title: "Convert PDF", icon: "sync_alt" },
@@ -136,10 +144,30 @@
     { title: "Sign PDF", icon: "draw" }
   ];
 
+  function assetPrefix() {
+    return global.WPSToolCatalog?.assetBase?.() || document.body?.dataset?.assetBase || "";
+  }
+
+  function withAsset(src) {
+    if (!src || /^https?:\/\//i.test(src) || src.startsWith("data:")) return src;
+    const base = assetPrefix();
+    if (!base) return src;
+    if (src.startsWith("../") || src.startsWith("/")) return src;
+    return base + src;
+  }
+
+  function rewriteAssetsInHtml(html) {
+    const base = assetPrefix();
+    if (!base) return html;
+    return html
+      .replace(/\bsrc="(images\/[^"]+)"/g, (_, p) => `src="${base}${p}"`)
+      .replace(/\bhref="(images\/[^"]+)"/g, (_, p) => `href="${base}${p}"`);
+  }
+
   function renderWhyChoose(config) {
     const items = config.items.map((item) => `
       <a class="why-choose-item" href="${item.href}" target="_blank" rel="noopener noreferrer">
-        <div class="why-choose-icon" aria-hidden="true"><img src="${item.icon}" alt="" width="256" height="256" loading="lazy" decoding="async"></div>
+        <div class="why-choose-icon" aria-hidden="true"><img src="${withAsset(item.icon)}" alt="" width="256" height="256" loading="lazy" decoding="async"></div>
         <h3>${item.title}</h3>
         <p>${item.body}</p>
         <span class="why-choose-doc-link">Learn More →</span>
@@ -194,7 +222,7 @@
   function renderBlog(config) {
     const cards = config.articles.map((a) => `
       <a class="blog-card" href="${a.href}" target="_blank" rel="noopener noreferrer">
-        <div class="blog-image"><img src="${a.image}" alt="" loading="lazy" decoding="async"></div>
+        <div class="blog-image"><img src="${withAsset(a.image)}" alt="" loading="lazy" decoding="async"></div>
         <h4>${a.title}</h4>
         <p>${a.body}</p>
       </a>
@@ -205,7 +233,7 @@
           <div><h2>${config.title}</h2></div>
           <a class="btn outline" href="${config.moreHref}" target="_blank" rel="noopener noreferrer">
             <span>More Articles</span>
-            <span class="btn-icon"><img src="images/legacy/arrow-up-right.svg" alt=""></span>
+            <span class="btn-icon"><img src="${withAsset("images/legacy/arrow-up-right.svg")}" alt=""></span>
           </a>
         </div>
         <div class="blog-grid">${cards}</div>
@@ -218,21 +246,50 @@
       <section class="tool-download-compact" id="download-cta">
         <a class="btn blue" href="#" data-wps-download="auto">
           <span>Download for All Features</span>
-          <span class="btn-icon"><img src="images/legacy/arrow-up-right.svg" alt=""></span>
+          <span class="btn-icon"><img src="${withAsset("images/legacy/arrow-up-right.svg")}" alt=""></span>
         </a>
       </section>
     `;
   }
 
-  function renderRelatedTools(currentTool) {
+  function relatedFromSlugs(slugs) {
+    const catalog = global.WPSToolCatalog;
+    if (!catalog || !slugs?.length) return null;
+    return slugs.map((slug) => {
+      const tool = catalog.getBySlug(slug);
+      if (!tool) return null;
+      return {
+        title: tool.title,
+        icon: tool.materialIcon || "sync_alt",
+        href: catalog.resolvePage(tool.page)
+      };
+    }).filter(Boolean);
+  }
+
+  function renderRelatedTools(currentTool, options) {
     const routes = global.WPSToolRoutes;
-    const cards = RELATED_TOOLS.map((t) => {
-      const href = routes ? routes.getPageForTool(t.title === "Sign PDF" ? "Signing PDF" : t.title) : "#";
-      return `<a class="related-card" href="${href}"><span class="material-symbols-rounded">${t.icon}</span><span>${t.title}</span></a>`;
-    }).join("");
+    const fromCatalog = relatedFromSlugs(options?.relatedSlugs);
+    const cardsSource = fromCatalog || RELATED_TOOLS.map((t) => {
+      const title = t.title === "Sign PDF" ? "Signing PDF" : t.title;
+      return {
+        title: t.title,
+        icon: t.icon,
+        href: routes ? routes.getPageForTool(title) : "#"
+      };
+    });
+
+    const heading = options?.relatedHeading
+      || (currentTool && String(currentTool).includes("3d") || options?.relatedSlugs?.some((s) => /converter$/.test(s))
+        ? "Related Tools"
+        : "Related PDF Tools");
+
+    const cards = cardsSource.map((t) =>
+      `<a class="related-card" href="${t.href}"><span class="material-symbols-rounded">${t.icon}</span><span>${t.title}</span></a>`
+    ).join("");
+
     return `
       <section class="tool-related-section" id="related-tools">
-        <h2>Related PDF Tools</h2>
+        <h2>${heading}</h2>
         <div class="related-grid">${cards}</div>
       </section>
     `;
@@ -249,20 +306,30 @@
     });
   }
 
-  function mount(toolKey, container) {
-    const data = CONTENT[toolKey];
+  function resolveData(slugOrKey) {
+    const lib = global.WPSToolContentLibrary;
+    if (lib?.get?.(slugOrKey)) return lib.get(slugOrKey);
+    const legacy = LEGACY_KEY[slugOrKey] || slugOrKey;
+    return CONTENT[legacy] || null;
+  }
+
+  function mount(slugOrKey, container, options) {
+    const data = resolveData(slugOrKey);
     if (!data || !container) return;
     let html = "";
     if (data.whyChoose) html += renderWhyChoose(data.whyChoose);
     if (data.guide) html += renderConverterGuide(data.guide);
     if (data.faq) html += renderFaq(data.faq);
     if (data.blog) html += renderBlog(data.blog);
-    html += renderRelatedTools(toolKey);
+
+    const relatedSlugs = options?.relatedSlugs
+      || global.WPSToolCatalog?.getBySlug?.(slugOrKey)?.related;
+    html += renderRelatedTools(slugOrKey, { ...options, relatedSlugs });
     html += renderDownloadCta();
-    container.innerHTML = html;
+    container.innerHTML = rewriteAssetsInHtml(html);
     initFaqAccordion(container);
     global.WPSLinks?.wireDownloadTriggers(container);
   }
 
-  global.WPSToolContent = { CONTENT, mount, initFaqAccordion };
+  global.WPSToolContent = { CONTENT, mount, initFaqAccordion, renderRelatedTools };
 })(typeof window !== "undefined" ? window : globalThis);
