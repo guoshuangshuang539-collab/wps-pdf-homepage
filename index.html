@@ -17,8 +17,6 @@
     <link rel="preload" as="image" href="images/tool-covers-v4/compress-pdf.webp" />
     <link rel="preload" as="image" href="images/tool-covers-v4/convert-pdf.webp" />
     <link rel="preload" as="image" href="images/tool-covers-v4/signing-pdf.webp" />
-    <link rel="preload" as="image" href="images/tool-covers-v4/organizing-pdf.webp" />
-    <link rel="preload" as="image" href="images/tool-covers-v4/html-to-pdf.webp" />
     <link rel="preload" as="image" href="images/tool-covers-v4/xml-to-pdf.webp" />
     <link rel="preload" as="image" href="images/tool-covers-v4/pdf-to-jpg.webp" />
     <link rel="preload" as="image" href="images/tool-covers-v4/word-to-jpg.webp" />
@@ -368,13 +366,27 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        width: min(930px, calc(100vw - 48px));
+        width: min(1080px, calc(100vw - 48px));
       }
 
       .nav-dropdown.tools-menu .nav-dropdown-grid {
         display: grid;
-        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        grid-template-columns: repeat(6, minmax(120px, 1fr));
         gap: 24px;
+      }
+
+      .nav-group-title .nav-group-new {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 6px;
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #7b6bf5 0%, #5948f3 100%);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        vertical-align: middle;
       }
 
       .nav-dropdown.desktop-menu {
@@ -3185,7 +3197,7 @@
         font-size: 14px;
         line-height: 1.42;
         -webkit-box-orient: vertical;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 5;
       }
 
       .lab-tool-link {
@@ -3397,12 +3409,12 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        width: min(960px, calc(100vw - 48px));
+        width: min(720px, calc(100vw - 48px));
       }
 
       .nav-dropdown.conversion-3d-menu .nav-dropdown-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(200px, 1fr));
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
         gap: 20px;
       }
 
@@ -3639,15 +3651,13 @@
 
       .tools-directory-row {
         display: grid;
-        grid-template-columns:
-          minmax(148px, 0.9fr)
-          minmax(168px, 1fr)
-          minmax(148px, 0.9fr)
-          minmax(228px, 1.15fr)
-          minmax(228px, 1.15fr)
-          minmax(210px, 1.05fr);
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 24px 20px;
         align-items: start;
+      }
+
+      .tools-directory-row--six {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
       }
 
       .tools-directory-row--secondary {
@@ -3875,7 +3885,6 @@
               <p class="nav-group-title">Sign &amp; Organize</p>
               <div class="nav-menu-list">
                 <a class="nav-menu-link" href="#"><img src="images/tools-icon/signing-pdf.svg" alt="">Signing PDF</a>
-                <a class="nav-menu-link" href="#"><img src="images/tools-icon/organizing-pdf.svg" alt="">Organizing PDF</a>
               </div>
             </div>
             <div class="nav-group">
@@ -3894,6 +3903,14 @@
                 <a class="nav-menu-link" href="#"><img src="images/tools-icon/Excel to PDF.svg" alt="">Excel to PDF</a>
                 <a class="nav-menu-link" href="#"><img src="images/tools-icon/PPT to PDF.svg" alt="">PPT to PDF</a>
                 <a class="nav-menu-link" href="#"><img src="images/tools-icon/JPG to PDF.svg" alt="">JPG to PDF</a>
+              </div>
+            </div>
+            <div class="nav-group">
+              <p class="nav-group-title">Other Conversion <span class="nav-group-new">New</span></p>
+              <div class="nav-menu-list">
+                <a class="nav-menu-link" href="#"><img src="images/tools-icon/xml to PDF.svg" alt="">XML to PDF</a>
+                <a class="nav-menu-link" href="#"><img src="images/tools-icon/Word to jpg.svg" alt="">Word to JPG</a>
+                <a class="nav-menu-link" href="#"><img src="images/tools-icon/JPG to Word.svg" alt="">JPG to Word</a>
               </div>
             </div>
             </div>
@@ -4366,7 +4383,10 @@
       </div>
     </footer>
 
+    <script src="scripts/format-hubs-3d.js"></script>
     <script src="scripts/tool-routes.js"></script>
+    <script src="scripts/site-nav-3d.js"></script>
+    <script src="scripts/tools-directory.js"></script>
     <script>
       const toolHref = (title) => (window.WPSToolRoutes ? WPSToolRoutes.getPageForTool(title) : "#");
 
@@ -4383,202 +4403,46 @@
         { title: "Compress PDF", desc: "Reduce the size of PDF files online using 3 compression methods", icon: "compress-pdf.svg", bg: "Compress PDF.png", fg: "#ffffff", badge: "NEW" },
         { title: "Convert PDF", desc: "Convert PDF files to the format you need online in seconds.", icon: "convert-pdf.svg", bg: "Compress PDF.png", fg: "#ffffff" },
         { title: "Signing PDF", desc: "Create and fill e-signatures in PDF files online and secure your e-signature", icon: "signing-pdf.svg", bg: "Signing PDF.png", fg: "#2a0b00" },
-        { title: "Organizing PDF", desc: "Manage multiple pages of a PDF file (add, delete, or rearrange pages)", icon: "organizing-pdf.svg", bg: "Organizing PDF.png", fg: "#2a0b00" },
-        { title: "HTML to PDF", desc: "Convert HTML files to PDF documents online with perfect formatting and no sign-up required", icon: "HTML to PDF.svg", bg: "HTML to PDF.png", fg: "#2a0b00" },
         { title: "XML to PDF", desc: "Convert XML files (NFE/CTE) to PDF documents online for free", icon: "xml to PDF.svg", bg: "XML to PDF.png", fg: "#2a0b00" },
         { title: "PDF to JPG", desc: "Convert PDF files to JPG images online with high quality and no sign-up required", icon: "PDF to JPG.svg", bg: "PDF to JPG.png", fg: "#ffffff" },
         { title: "Word to JPG", desc: "Convert Word documents to JPG images online with high quality and no sign-up required", icon: "Word to jpg.svg", bg: "Word to JPG.png", fg: "#ffffff", descFg: "rgba(255,255,255,0.82)" },
         { title: "JPG to Word", desc: "Convert JPG images to editable Word documents online with OCR technology", icon: "JPG to Word.svg", bg: "JPG to Word-1.png", fg: "#2a0b00", badge: "OCR" }
       ];
 
-      const conversion3DCatalog = {
-        mesh: [
-          { input: "OBJ", outputs: ["STL", "FBX", "GLB/GLTF", "DAE", "3MF", "PLY"] },
-          { input: "STL", outputs: ["OBJ", "FBX", "GLB/GLTF", "DAE", "3MF", "PLY"] },
-          { input: "FBX", outputs: ["OBJ", "STL", "GLB/GLTF", "DAE", "3MF", "PLY"] },
-          { input: "GLB/GLTF", outputs: ["OBJ", "STL", "FBX", "DAE", "3MF", "PLY"] },
-          { input: "DAE", outputs: ["OBJ", "STL", "FBX", "GLB/GLTF", "3MF", "PLY"] },
-          { input: "3DS", outputs: ["OBJ", "STL", "FBX", "GLB/GLTF", "DAE", "3MF", "PLY"] },
-          { input: "X", outputs: ["OBJ", "STL", "FBX", "GLB/GLTF", "DAE", "3MF", "PLY"] },
-          { input: "3MF", outputs: ["OBJ", "STL", "FBX", "GLB/GLTF", "DAE", "PLY"] },
-          { input: "OFF", outputs: ["OBJ", "STL", "FBX", "GLB/GLTF", "DAE", "3MF", "PLY"] },
-          { input: "AC3D", outputs: ["OBJ", "STL", "FBX", "GLB/GLTF", "DAE", "3MF", "PLY"] },
-          { input: "PLY", outputs: ["OBJ", "STL", "FBX", "GLB/GLTF", "DAE", "3MF"] }
-        ],
-        cad: [
-          { input: "STEP", outputs: ["GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "IGES", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "CATIA V5", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "NX", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "Creo", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "SolidWorks", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "Parasolid", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "Inventor", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "JT", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "PRC", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "ACIS", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "Solid Edge", outputs: ["STEP", "GLB/GLTF", "FBX", "OBJ", "STL"] }
-        ],
-        bim: [
-          { input: "IFC", outputs: ["GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "Revit", outputs: ["GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "Navisworks", outputs: ["GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "DWF", outputs: ["GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "AutoCAD", outputs: ["GLB/GLTF", "FBX", "OBJ", "STL"] },
-          { input: "SKP", outputs: ["GLB/GLTF", "FBX", "OBJ", "STL"] }
-        ]
-      };
-
       const conversion3DGradients = [
         "linear-gradient(135deg, #f4f1ff 0%, #e8e2ff 55%, #ddd4ff 100%)",
         "linear-gradient(135deg, #eef8ff 0%, #dcefff 55%, #c8e4ff 100%)",
-        "linear-gradient(135deg, #f2fff8 0%, #ddf7ea 55%, #c8efd8 100%)",
-        "linear-gradient(135deg, #fff8ef 0%, #ffe9d4 55%, #ffd9b8 100%)",
-        "linear-gradient(135deg, #fff4f8 0%, #ffe3ef 55%, #ffd1e4 100%)",
-        "linear-gradient(135deg, #f7f4ff 0%, #ebe4ff 55%, #ddd2ff 100%)"
+        "linear-gradient(135deg, #f2fff8 0%, #ddf7ea 55%, #c8efd8 100%)"
       ];
 
-      function build3DGroupedTitle(input, outputs) {
-        return `${input} to ${outputs.join("/")}`;
-      }
-
-      function build3DGroupedDesc(input, outputs) {
-        return `Convert ${input} files to ${outputs.join(", ")} online for 3D visualization, printing, game engines, and cross-platform sharing.`;
-      }
-
-      function getGrouped3DConversions() {
-        const items = [];
-        Object.entries(conversion3DCatalog).forEach(([scene, groups]) => {
-          groups.forEach((group) => {
-            items.push({
-              scene,
-              input: group.input,
-              outputs: group.outputs,
-              title: build3DGroupedTitle(group.input, group.outputs)
-            });
-          });
-        });
-        return items;
-      }
-
-      const conversion3DGrouped = getGrouped3DConversions();
-
-      const tools3D = conversion3DGrouped.map((item, index) => ({
-        title: item.title,
-        desc: build3DGroupedDesc(item.input, item.outputs),
-        icon: "convert-pdf.svg",
-        category: "3d-conversion",
-        gradient: conversion3DGradients[index % conversion3DGradients.length],
-        input: item.input,
-        outputs: item.outputs,
-        badge: index === 0 ? "NEW" : undefined
+      const tools3D = (window.WPSSiteNav3D?.getHubCards?.() || []).map((item, index) => ({
+        ...item,
+        bg: "Compress PDF.png",
+        fg: "#121317",
+        gradient: conversion3DGradients[index % conversion3DGradients.length]
       }));
 
       const carouselTools = [...tools, ...tools3D];
 
       function render3DNavMenu() {
-        const menu = document.querySelector("[data-3d-nav-menu]");
-        if (!menu) return;
-        const labels = {
-          mesh: "Mesh Formats",
-          cad: "CAD Industrial",
-          bim: "BIM & Architecture"
-        };
-        menu.innerHTML = `
-          <div class="nav-dropdown-grid">
-            ${Object.entries(conversion3DCatalog).map(([scene, groups]) => `
-              <div class="nav-group">
-                <p class="nav-group-title">${labels[scene]}</p>
-                <div class="nav-menu-list">
-                  ${groups.map((group) => {
-                    const title = build3DGroupedTitle(group.input, group.outputs);
-                    const short = group.input.length > 6 ? group.input.slice(0, 4) : group.input.slice(0, 3);
-                    return `<a class="nav-menu-link nav-menu-link--grouped" href="#" aria-label="${title}"><span class="nav-format-icon">${short}</span><span class="nav-menu-link-text"><strong>${group.input}</strong><span class="nav-menu-link-targets">to ${group.outputs.join(" / ")}</span></span></a>`;
-                  }).join("")}
-                </div>
-              </div>
-            `).join("")}
-          </div>
-          <div class="nav-dropdown-footer">
-            <a class="nav-all-tools-link" href="https://szdmt.com/en-US/all-products/" target="_blank" rel="noopener noreferrer">All Tools →</a>
-          </div>
-        `;
+        window.WPSSiteNav3D?.render3DNavMenu(document);
       }
 
       function renderToolsDirectory() {
-        const container = document.querySelector("[data-tools-directory]");
-        if (!container) return;
-
-        const pickTools = (...titles) => titles
-          .map((title) => tools.find((tool) => tool.title === title))
-          .filter(Boolean);
-
-        const onlinePdfItems = pickTools(
-          "Compress PDF", "Convert PDF", "Split PDF", "Merge PDF", "Signing PDF", "Organizing PDF"
-        );
-
-        const conversionItems = pickTools(
-          "PDF to Word", "PDF to Excel", "PDF to PPT", "PDF to JPG",
-          "Word to PDF", "Excel to PDF", "PPT to PDF", "JPG to PDF",
-          "HTML to PDF", "XML to PDF", "Word to JPG", "JPG to Word"
-        );
-
-        const desktopItems = [
-          { title: "Read PDF", icon: "convert-pdf.svg" },
-          { title: "PDF AI", icon: "convert-pdf.svg" },
-          { title: "Annotate PDF", icon: "convert-pdf.svg" },
-          { title: "Edit PDF", icon: "convert-pdf.svg" },
-          { title: "PDF Viewer", icon: "convert-pdf.svg" },
-          { title: "OCR PDF", icon: "convert-pdf.svg" },
-          { title: "Create PDF", icon: "convert-pdf.svg" },
-          { title: "Combine PDF", icon: "merge-pdf.svg" },
-          { title: "Organize PDF", icon: "organizing-pdf.svg" },
-          { title: "Compress PDF", icon: "compress-pdf.svg" },
-          { title: "eSign PDF", icon: "signing-pdf.svg" },
-          { title: "Protect PDF", icon: "convert-pdf.svg" }
-        ];
-
-        const renderLink = (item, grouped = false) => {
-          const iconMarkup = grouped
-            ? `<span class="tools-directory-icon"><span class="format-dot" aria-hidden="true"></span></span>`
-            : `<span class="tools-directory-icon"><img src="images/tools-icon/${encodeURIComponent(item.icon || "convert-pdf.svg")}" alt=""></span>`;
-          if (grouped) {
-            return `<a class="tools-directory-link tools-directory-link--grouped" href="#" aria-label="${item.title}">${iconMarkup}<span class="tools-directory-text"><strong>${item.input}</strong><span class="tools-directory-targets">to ${item.outputs.join(" / ")}</span></span></a>`;
-          }
-          return `<a class="tools-directory-link" href="${toolHref(item.title)}" aria-label="${item.title}">${iconMarkup}<span>${item.title}</span></a>`;
-        };
-
-        const renderColumn = (title, items, grouped = false) => `
-          <div class="tools-directory-group${grouped ? " tools-directory-group--3d" : ""}">
-            <h3>${title}</h3>
-            <div class="tools-directory-list">${items.map((item) => renderLink(item, grouped)).join("")}</div>
-          </div>
-        `;
-
-        const columns = [
-          renderColumn("Online PDF Tools", onlinePdfItems),
-          renderColumn("Conversion Tools", conversionItems),
-          renderColumn("Desktop Features", desktopItems),
-          renderColumn("Mesh Formats", conversion3DGrouped.filter((item) => item.scene === "mesh"), true),
-          renderColumn("CAD Industrial", conversion3DGrouped.filter((item) => item.scene === "cad"), true),
-          renderColumn("BIM & Architecture", conversion3DGrouped.filter((item) => item.scene === "bim"), true)
-        ];
-
-        container.innerHTML = `<div class="tools-directory-row">${columns.join("")}</div>`;
+        window.WPSToolsDirectory?.render(document.querySelector("[data-tools-directory]"));
       }
 
       render3DNavMenu();
       renderToolsDirectory();
+      window.WPSToolRoutes?.wireHomepage(document);
 
       const dockGradients = {
         "Compress PDF.png": ["#fff6f6", "#ffe9e9", "#ffd7d7", "#ffc6c6"],
         "Excel to PDF.png": ["#effbf6", "#d8f4e9", "#bfead9", "#a3dcc8"],
-        "HTML to PDF.png": ["#effcfc", "#d9f4f6", "#bfe9ee", "#a3dbe4"],
         "JPG to PDF.png": ["#fff6f5", "#ffe8e6", "#ffd5d2", "#ffc4c0"],
         "JPG to Word-1.png": ["#f2f7ff", "#dceaff", "#bdd6ff", "#9fc2ff"],
         "JPG to Word.png": ["#f2f8ff", "#ddecff", "#c0dbff", "#9fc7ff"],
         "Merge PDF.png": ["#f6f0ff", "#eadcff", "#d6c0ff", "#b99af6"],
-        "Organizing PDF.png": ["#fff6f6", "#ffe9e8", "#ffd7d5", "#ffc7c4"],
         "PDF to Excel.png": ["#effbf6", "#d9f3e8", "#c2e8d9", "#a8dccb"],
         "PDF to JPG.png": ["#fff6ef", "#ffe9d7", "#ffd9bd", "#ffc996"],
         "PDF to PPT.png": ["#fff8ed", "#ffefd9", "#ffe1bd", "#ffd099"],
@@ -4591,7 +4455,7 @@
         "pdf to Word.png": ["#f2f8ff", "#ddecff", "#c0dbff", "#9fc7ff"]
       };
 
-      console.assert(tools.length === 18, "Expected 18 tools.");
+      console.assert(tools.length === 16, "Expected 16 tools.");
       const siteHeader = document.querySelector(".site-header");
       const dockScroller = document.querySelector("[data-dock-scroller]");
       const dockTrack = document.querySelector("[data-dock-track]");
@@ -4984,7 +4848,6 @@
           "Merge PDF": { category: "split-merge", art: "merge-pdf.webp" },
           "Split PDF": { category: "split-merge", art: "split-pdf.webp" },
           "Signing PDF": { category: "sign-organize", art: "signing-pdf.webp" },
-          "Organizing PDF": { category: "sign-organize", art: "organizing-pdf.webp" },
           "PDF to Word": { category: "from-pdf", art: "pdf-to-word.webp" },
           "PDF to Excel": { category: "from-pdf", art: "pdf-to-excel.webp" },
           "PDF to PPT": { category: "from-pdf", art: "pdf-to-ppt.webp" },
@@ -4993,18 +4856,19 @@
           "Excel to PDF": { category: "to-pdf", art: "excel-to-pdf.webp" },
           "PPT to PDF": { category: "to-pdf", art: "ppt-to-pdf.webp" },
           "JPG to PDF": { category: "to-pdf", art: "jpg-to-pdf.webp" },
-          "HTML to PDF": { category: "other", art: "html-to-pdf.webp" },
           "XML to PDF": { category: "other", art: "xml-to-pdf.webp" },
           "Word to JPG": { category: "other", art: "word-to-jpg.webp" },
           "JPG to Word": { category: "other", art: "jpg-to-word.webp" }
         };
 
         tools3D.forEach((tool) => {
+          const froms = tool.hubInputs || [];
+          const tos = tool.hubOutputs || [];
           metadata[tool.title] = {
             category: "3d-conversion",
             gradient: tool.gradient,
-            input: tool.input,
-            outputs: tool.outputs
+            input: froms.slice(0, 3).join(" / "),
+            outputs: tos.slice(0, 3)
           };
         });
 
@@ -5647,9 +5511,9 @@
       ].forEach(([source, values]) => addTranslation(source, values));
 
       [
-        "Compress PDF", "Convert PDF", "Split PDF", "Merge PDF", "Signing PDF", "Organizing PDF",
+        "Compress PDF", "Convert PDF", "Split PDF", "Merge PDF", "Signing PDF",
         "PDF to Word", "PDF to Excel", "PDF to PPT", "PDF to JPG", "Word to PDF", "Excel to PDF",
-        "PPT to PDF", "JPG to PDF", "JPG to Word", "Word to JPG", "HTML to PDF", "XML to PDF",
+        "PPT to PDF", "JPG to PDF", "JPG to Word", "Word to JPG", "XML to PDF",
         "Read PDF", "PDF AI", "Annotate PDF", "Create PDF", "Add Page Numbers to PDF", "Combine PDF",
         "PDF Viewer", "Edit PDF", "Unlock PDF", "Delete Pages from PDF", "Organize PDF", "PDF Filler",
         "eSign PDF", "Protect PDF", "OCR PDF", "Compare PDF", "PDF Tutorials", "PDF Softwares",
@@ -5657,10 +5521,10 @@
       ].forEach((source) => {
         const zh = {
           "Compress PDF": "压缩 PDF", "Convert PDF": "转换 PDF", "Split PDF": "拆分 PDF", "Merge PDF": "合并 PDF",
-          "Signing PDF": "签署 PDF", "Organizing PDF": "整理 PDF", "PDF to Word": "PDF 转 Word", "PDF to Excel": "PDF 转 Excel",
+          "Signing PDF": "签署 PDF", "PDF to Word": "PDF 转 Word", "PDF to Excel": "PDF 转 Excel",
           "PDF to PPT": "PDF 转 PPT", "PDF to JPG": "PDF 转 JPG", "Word to PDF": "Word 转 PDF", "Excel to PDF": "Excel 转 PDF",
           "PPT to PDF": "PPT 转 PDF", "JPG to PDF": "JPG 转 PDF", "JPG to Word": "JPG 转 Word", "Word to JPG": "Word 转 JPG",
-          "HTML to PDF": "HTML 转 PDF", "XML to PDF": "XML 转 PDF", "Read PDF": "阅读 PDF", "PDF AI": "PDF AI",
+          "XML to PDF": "XML 转 PDF", "Read PDF": "阅读 PDF", "PDF AI": "PDF AI",
           "Annotate PDF": "批注 PDF", "Create PDF": "创建 PDF", "Add Page Numbers to PDF": "添加 PDF 页码",
           "Combine PDF": "组合 PDF", "PDF Viewer": "PDF 查看器", "Edit PDF": "编辑 PDF", "Unlock PDF": "解锁 PDF",
           "Delete Pages from PDF": "删除 PDF 页面", "Organize PDF": "整理 PDF", "PDF Filler": "填写 PDF",

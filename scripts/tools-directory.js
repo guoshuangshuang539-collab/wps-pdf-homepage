@@ -1,14 +1,14 @@
 /**
- * Shared footer "All online Tools" directory renderer (same data as homepage).
+ * Shared footer "All online Tools" directory renderer.
+ * Layout: PDF Tools 1 · Conversion 2 · Desktop 2 · 3D Conversion 1 (max 6 items / column).
  */
 (function (global) {
-  const ONLINE_TOOLS = [
+  const PDF_TOOLS = [
     { title: "Compress PDF", icon: "compress-pdf.svg" },
     { title: "Convert PDF", icon: "convert-pdf.svg" },
     { title: "Split PDF", icon: "split-pdf.svg" },
     { title: "Merge PDF", icon: "merge-pdf.svg" },
-    { title: "Signing PDF", icon: "signing-pdf.svg" },
-    { title: "Organizing PDF", icon: "organizing-pdf.svg" }
+    { title: "Signing PDF", icon: "signing-pdf.svg" }
   ];
 
   const CONVERSION_TOOLS = [
@@ -20,7 +20,6 @@
     { title: "Excel to PDF", icon: "Excel to PDF.svg" },
     { title: "PPT to PDF", icon: "PPT to PDF.svg" },
     { title: "JPG to PDF", icon: "JPG to PDF.svg" },
-    { title: "HTML to PDF", icon: "HTML to PDF.svg" },
     { title: "XML to PDF", icon: "xml to PDF.svg" },
     { title: "Word to JPG", icon: "Word to jpg.svg" },
     { title: "JPG to Word", icon: "JPG to Word.svg" }
@@ -45,33 +44,41 @@
     return global.WPSToolRoutes ? WPSToolRoutes.getPageForTool(title) : "#";
   }
 
-  function get3DColumns() {
-    const catalog = global.WPSSiteNav3D?.CONVERSION_3D_CATALOG;
-    if (!catalog) return { mesh: [], cad: [], bim: [] };
-    return catalog;
+  function chunk(items, size) {
+    const out = [];
+    for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+    return out;
   }
 
-  function renderLink(item, grouped) {
-    if (grouped) {
-      return `<a class="tools-directory-link tools-directory-link--grouped" href="#" aria-label="${item.input}"><span class="tools-directory-icon"><span class="format-dot" aria-hidden="true"></span></span><span class="tools-directory-text"><strong>${item.input}</strong><span class="tools-directory-targets">to ${item.outputs.join(" / ")}</span></span></a>`;
-    }
-    return `<a class="tools-directory-link" href="${href(item.title)}" aria-label="${item.title}"><span class="tools-directory-icon"><img src="images/tools-icon/${encodeURIComponent(item.icon)}" alt=""></span><span>${item.title}</span></a>`;
+  function renderLink(item) {
+    const link = item.href || href(item.title);
+    return `<a class="tools-directory-link" href="${link}" aria-label="${item.title}"><span class="tools-directory-icon"><img src="images/tools-icon/${encodeURIComponent(item.icon || "convert-pdf.svg")}" alt=""></span><span>${item.title}</span></a>`;
   }
 
-  function renderColumn(title, items, grouped) {
-    return `<div class="tools-directory-group${grouped ? " tools-directory-group--3d" : ""}"><h3>${title}</h3><div class="tools-directory-list">${items.map((i) => renderLink(i, grouped)).join("")}</div></div>`;
+  function renderHubLink(hub) {
+    const link = global.WPSFormatHubs3D?.pageForHub(hub.id) || "#";
+    return `<a class="tools-directory-link" href="${link}" aria-label="${hub.title}"><span class="tools-directory-icon"><span class="format-dot" aria-hidden="true"></span></span><span>${hub.title}</span></a>`;
+  }
+
+  function renderColumn(title, itemsHtml, continued) {
+    const heading = continued
+      ? `<h3 class="tools-directory-heading-continued" aria-hidden="true">${title}</h3>`
+      : `<h3>${title}</h3>`;
+    return `<div class="tools-directory-group">${heading}<div class="tools-directory-list">${itemsHtml}</div></div>`;
   }
 
   function render(container) {
     if (!container) return;
-    const catalog = get3DColumns();
-    container.innerHTML = `<div class="tools-directory-row">${[
-      renderColumn("Online PDF Tools", ONLINE_TOOLS),
-      renderColumn("Conversion Tools", CONVERSION_TOOLS),
-      renderColumn("Desktop Features", DESKTOP_TOOLS),
-      renderColumn("Mesh Formats", catalog.mesh || [], true),
-      renderColumn("CAD Industrial", catalog.cad || [], true),
-      renderColumn("BIM & Architecture", catalog.bim || [], true)
+    const H = global.WPSFormatHubs3D?.HUBS || {};
+    const hubs = ["mesh", "cad", "bim"].map((id) => H[id]).filter(Boolean);
+    const conversionCols = chunk(CONVERSION_TOOLS, 6);
+    const desktopCols = chunk(DESKTOP_TOOLS, 6);
+
+    container.innerHTML = `<div class="tools-directory-row tools-directory-row--six">${[
+      renderColumn("PDF Tools", PDF_TOOLS.map(renderLink).join("")),
+      ...conversionCols.map((items, i) => renderColumn("Conversion Tools", items.map(renderLink).join(""), i > 0)),
+      ...desktopCols.map((items, i) => renderColumn("Desktop Features", items.map(renderLink).join(""), i > 0)),
+      renderColumn("3D Conversion", hubs.map(renderHubLink).join(""))
     ].join("")}</div>`;
   }
 

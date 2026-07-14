@@ -10,8 +10,7 @@
   <link rel="stylesheet" href="tool-shell.css" />
   <link rel="stylesheet" href="tool-home-sections.css" />
 </head>
-<body class="tool-page" data-tool-id="convert-pdf-hub">
-  <!-- Shared homepage shell: fixed header + footer; only main content differs -->
+<body class="tool-page" data-tool-id="convert-hub">
   <div id="site-chrome-header"></div>
 
   <main class="tool-page-main">
@@ -19,10 +18,10 @@
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="homepage.html">Home</a>
         <span aria-hidden="true">›</span>
-        <span>Free PDF Converter Online</span>
+        <span id="crumb-title">Free PDF Converter Online</span>
       </nav>
-      <h1>Free PDF Converter Online</h1>
-      <p class="subtitle">Convert documents to PDF files with the free online PDF converter. Upload Word, Excel, PPT, PDF or image formats, choose the output format, and get the converted document in seconds.</p>
+      <h1 id="page-title">Free PDF Converter Online</h1>
+      <p class="subtitle" id="page-subtitle">Convert documents to PDF files with the free online PDF converter. Upload Word, Excel, PPT, PDF or image formats, choose the output format, and get the converted document in seconds.</p>
     </section>
 
     <section class="login-gate" id="login-gate" aria-live="polite">
@@ -44,27 +43,14 @@
           <div class="format-hub-grid">
             <div class="format-group">
               <h4>Convert from</h4>
-              <div class="format-chips" id="chips-from" role="listbox" aria-label="Input format">
-                <button class="format-chip is-selected" type="button" data-format="PDF">PDF</button>
-                <button class="format-chip" type="button" data-format="Word">Word</button>
-                <button class="format-chip" type="button" data-format="Excel">Excel</button>
-                <button class="format-chip" type="button" data-format="PPT">PPT</button>
-                <button class="format-chip" type="button" data-format="JPG">JPG</button>
-                <button class="format-chip" type="button" data-format="XML">XML</button>
-              </div>
+              <div class="format-chips" id="chips-from" role="listbox" aria-label="Input format"></div>
             </div>
             <div class="format-arrow" aria-hidden="true">
               <span class="material-symbols-rounded">arrow_forward</span>
             </div>
             <div class="format-group">
               <h4>Convert to</h4>
-              <div class="format-chips" id="chips-to" role="listbox" aria-label="Output format">
-                <button class="format-chip" type="button" data-format="PDF">PDF</button>
-                <button class="format-chip is-selected" type="button" data-format="Word">Word</button>
-                <button class="format-chip" type="button" data-format="Excel">Excel</button>
-                <button class="format-chip" type="button" data-format="PPT">PPT</button>
-                <button class="format-chip" type="button" data-format="JPG">JPG</button>
-              </div>
+              <div class="format-chips" id="chips-to" role="listbox" aria-label="Output format"></div>
             </div>
           </div>
           <p class="conversion-label" id="conversion-label"><strong>PDF → Word</strong> · online converter</p>
@@ -148,7 +134,6 @@
     </section>
 
     <input type="file" id="file-input" accept=".pdf,application/pdf" hidden />
-
     <div id="tool-content-mount"></div>
   </main>
 
@@ -180,6 +165,7 @@
   </aside>
 
   <script src="scripts/wps-links.js"></script>
+  <script src="scripts/format-hubs-3d.js"></script>
   <script src="scripts/tool-routes.js"></script>
   <script src="scripts/site-nav-3d.js"></script>
   <script src="scripts/tools-directory.js"></script>
@@ -190,137 +176,212 @@
   <script src="scripts/tool-page.js"></script>
   <script>
     (async function () {
+      const params = new URLSearchParams(location.search);
+      const hubId = (params.get("hub") || "pdf").toLowerCase();
+      const hub3d = window.WPSFormatHubs3D?.getHub(hubId);
+      const is3d = Boolean(hub3d);
+
+      const PDF_FROM = ["PDF", "Word", "Excel", "PPT", "JPG", "XML"];
+      const PDF_TO = ["PDF", "Word", "Excel", "PPT", "JPG"];
+      const PDF_ALLOWED = {
+        PDF: ["Word", "Excel", "PPT", "JPG"],
+        Word: ["PDF", "JPG"],
+        Excel: ["PDF"],
+        PPT: ["PDF"],
+        JPG: ["PDF", "Word"],
+        XML: ["PDF"]
+      };
+
+      let fromFormat;
+      let toFormat;
+      let modeLabel = "online converter";
+
+      if (is3d) {
+        fromFormat = hub3d.defaultFrom;
+        toFormat = hub3d.defaultTo;
+        modeLabel = hub3d.title;
+        document.title = hub3d.pageTitle + " | WPS PDF Tools Demo";
+        document.getElementById("crumb-title").textContent = hub3d.pageTitle;
+        document.getElementById("page-title").textContent = hub3d.pageTitle;
+        document.getElementById("page-subtitle").textContent = hub3d.subtitle;
+        document.body.dataset.toolId = hub3d.id + "-converter";
+      } else {
+        fromFormat = "PDF";
+        toFormat = "Word";
+      }
+
+      function chipHtml(formats, selected) {
+        return formats.map((fmt) =>
+          `<button class="format-chip${fmt === selected ? " is-selected" : ""}" type="button" data-format="${fmt}">${fmt}</button>`
+        ).join("");
+      }
+
+      function renderChips() {
+        if (is3d) {
+          document.getElementById("chips-from").innerHTML = chipHtml(hub3d.inputs, fromFormat);
+          document.getElementById("chips-to").innerHTML = chipHtml(hub3d.outputs, toFormat);
+        } else {
+          document.getElementById("chips-from").innerHTML = chipHtml(PDF_FROM, fromFormat);
+          document.getElementById("chips-to").innerHTML = chipHtml(PDF_TO, toFormat);
+        }
+        applyDisableState();
+      }
+
+      function isAllowed(from, to) {
+        if (is3d) return WPSFormatHubs3D.canConvert(hubId, from, to);
+        return (PDF_ALLOWED[from] || []).includes(to);
+      }
+
+      function applyDisableState() {
+        document.querySelectorAll("#chips-from .format-chip").forEach((chip) => {
+          const fmt = chip.dataset.format;
+          const disabled = !isAllowed(fmt, toFormat);
+          chip.classList.toggle("is-disabled", disabled);
+          chip.setAttribute("aria-disabled", disabled ? "true" : "false");
+        });
+        document.querySelectorAll("#chips-to .format-chip").forEach((chip) => {
+          const fmt = chip.dataset.format;
+          const disabled = !isAllowed(fromFormat, fmt);
+          chip.classList.toggle("is-disabled", disabled);
+          chip.setAttribute("aria-disabled", disabled ? "true" : "false");
+        });
+      }
+
+      function acceptFor(fmt) {
+        if (is3d) return WPSFormatHubs3D.acceptFor(hubId, fmt);
+        return WPSToolPage.acceptForFormat(fmt);
+      }
+
+      function updateFormatUI() {
+        document.getElementById("conversion-label").innerHTML =
+          `<strong>${fromFormat} → ${toFormat}</strong> · ${modeLabel}`;
+        document.getElementById("drop-title").textContent = `Drop ${fromFormat} files here`;
+        document.getElementById("drop-sub").textContent = `Convert to ${toFormat}`;
+        document.getElementById("select-label").textContent = `Select ${fromFormat} File`;
+        document.getElementById("file-input").accept = acceptFor(fromFormat);
+        applyDisableState();
+      }
+
+      function selectFormat(type, fmt) {
+        if (type === "from") {
+          fromFormat = fmt;
+          if (!isAllowed(fromFormat, toFormat)) {
+            toFormat = is3d
+              ? WPSFormatHubs3D.firstAllowedTo(hubId, fromFormat, toFormat)
+              : (PDF_ALLOWED[fromFormat] || ["PDF"])[0];
+          }
+        } else {
+          toFormat = fmt;
+          if (!isAllowed(fromFormat, toFormat)) {
+            fromFormat = is3d
+              ? WPSFormatHubs3D.firstAllowedFrom(hubId, toFormat, fromFormat)
+              : Object.keys(PDF_ALLOWED).find((f) => (PDF_ALLOWED[f] || []).includes(toFormat)) || fromFormat;
+          }
+        }
+        renderChips();
+        updateFormatUI();
+      }
+
+      function bindChips(containerId, type) {
+        document.getElementById(containerId).addEventListener("click", (e) => {
+          const chip = e.target.closest(".format-chip");
+          if (!chip || chip.classList.contains("is-disabled")) return;
+          selectFormat(type, chip.dataset.format);
+        });
+      }
+
+      const Q = window.WPSQuotaFlow;
+      function bindDemoPanel(renderUI, resetResult) {
+        const scenarios = document.getElementById("demo-scenarios");
+        scenarios.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-scenario]");
+          if (!btn) return;
+          scenarios.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
+          btn.classList.add("is-active");
+          const s = btn.dataset.scenario;
+          if (s === "logged_out") Q.logout();
+          else Q.setScenario(s);
+          resetResult();
+          renderUI();
+        });
+        document.getElementById("demo-uses").addEventListener("change", (e) => {
+          Q.setUsesRemaining(parseInt(e.target.value, 10));
+          resetResult();
+          renderUI();
+        });
+        document.getElementById("demo-reset").addEventListener("click", () => {
+          Q.reset();
+          scenarios.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
+          scenarios.querySelector("[data-scenario=logged_out]").classList.add("is-active");
+          resetResult();
+          renderUI();
+        });
+      }
+
       await WPSSiteChrome.mount();
       WPSToolContent.mount("convert", document.getElementById("tool-content-mount"));
       WPSDemoPanel.init();
+      renderChips();
 
-    const Q = window.WPSQuotaFlow;
-    let fromFormat = "PDF";
-    let toFormat = "Word";
-
-    const fileLabels = { PDF: "PDF", Word: "Word", Excel: "Excel", PPT: "PPT", JPG: "Image", XML: "XML" };
-
-    function updateFormatUI() {
-      document.getElementById("conversion-label").innerHTML =
-        `<strong>${fromFormat} → ${toFormat}</strong> · online converter`;
-      document.getElementById("drop-title").textContent = `Drop ${fileLabels[fromFormat] || fromFormat} files here`;
-      document.getElementById("drop-sub").textContent = `Convert to ${toFormat}`;
-      document.getElementById("select-label").textContent = `Select ${fileLabels[fromFormat] || fromFormat} File`;
-      document.getElementById("file-input").accept = WPSToolPage.acceptForFormat(fromFormat);
-    }
-
-    function bindChips(containerId, type) {
-      document.getElementById(containerId).addEventListener("click", (e) => {
-        const chip = e.target.closest(".format-chip");
-        if (!chip) return;
-        const group = chip.parentElement;
-        group.querySelectorAll(".format-chip").forEach((c) => c.classList.remove("is-selected"));
-        chip.classList.add("is-selected");
-        if (type === "from") fromFormat = chip.dataset.format;
-        else toFormat = chip.dataset.format;
-        if (fromFormat === toFormat) {
-          const other = type === "from" ? "to" : "from";
-          const alt = other === "to" ? "Word" : "PDF";
-          if (type === "from") toFormat = alt;
-          else fromFormat = alt;
-          document.querySelector(`#chips-${other} [data-format="${alt}"]`)?.classList.add("is-selected");
-          chip.classList.remove("is-selected");
-          document.querySelector(`#chips-${type} [data-format="${type === "from" ? fromFormat : toFormat}"]`)?.classList.add("is-selected");
+      window.WPSToolPage.initToolPage({
+        mode: "convert",
+        toolVerb: is3d ? hub3d.toolVerb : "convert your files",
+        continueLabel: "Continue to convert",
+        getFormats: () => ({ from: fromFormat, to: toFormat }),
+        bindFormatPicker() {
+          bindChips("chips-from", "from");
+          bindChips("chips-to", "to");
+          updateFormatUI();
+        },
+        bindDemoPanel,
+        onSyncDemo(state) {
+          document.getElementById("demo-uses").value = String(state.usesRemaining);
+        },
+        els: {
+          header: document.querySelector(".site-header"),
+          formatHub: document.getElementById("format-hub"),
+          loginGateCard: document.getElementById("login-gate-card"),
+          loginGateTitle: document.getElementById("login-gate-title"),
+          loginGateBody: document.getElementById("login-gate-body"),
+          loginGateIcon: document.getElementById("login-gate-icon"),
+          btnLoginPrimary: document.getElementById("btn-login-primary"),
+          btnHeaderLogin: document.getElementById("chrome-login-link"),
+          userLabel: document.getElementById("user-label"),
+          userAvatar: document.getElementById("user-avatar"),
+          quotaText: document.getElementById("quota-text"),
+          quotaInfo: document.getElementById("quota-info"),
+          quotaTooltip: document.getElementById("quota-tooltip"),
+          workspaceBody: document.getElementById("workspace-body"),
+          workspaceSteps: document.querySelectorAll("#workspace-steps .workspace-step"),
+          uploadZone: document.getElementById("upload-zone"),
+          fileInput: document.getElementById("file-input"),
+          btnSelectFile: document.getElementById("btn-select-file"),
+          processingPanel: document.getElementById("processing-panel"),
+          progressBar: document.getElementById("progress-bar"),
+          progressPercent: document.getElementById("progress-percent"),
+          progressEta: document.getElementById("progress-eta"),
+          progressPhase: document.getElementById("progress-phase"),
+          processFilename: document.getElementById("process-filename"),
+          processFilesize: document.getElementById("process-filesize"),
+          uploadSuccessPanel: document.getElementById("upload-success-panel"),
+          uploadSuccessFilename: document.getElementById("upload-success-filename"),
+          uploadSuccessFilesize: document.getElementById("upload-success-filesize"),
+          btnUploadBack: document.getElementById("btn-upload-back"),
+          btnUploadContinue: document.getElementById("btn-upload-continue"),
+          resultPanel: document.getElementById("result-panel"),
+          resultFilename: document.getElementById("result-filename"),
+          resultStats: document.getElementById("result-stats"),
+          downloadBtn: document.getElementById("download-btn"),
+          downloadLabel: document.getElementById("download-label"),
+          btnDownloadClient: document.getElementById("btn-download-client"),
+          stageGate: document.getElementById("stage-gate"),
+          stageTitle: document.getElementById("stage-title"),
+          stageBody: document.getElementById("stage-body"),
+          stagePrimary: document.getElementById("stage-primary"),
+          stageSecondary: document.getElementById("stage-secondary"),
+          stageIcon: document.getElementById("stage-icon")
         }
-        updateFormatUI();
       });
-    }
-
-    function bindDemoPanel(renderUI, resetResult) {
-      const scenarios = document.getElementById("demo-scenarios");
-      scenarios.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-scenario]");
-        if (!btn) return;
-        scenarios.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
-        btn.classList.add("is-active");
-        const s = btn.dataset.scenario;
-        if (s === "logged_out") Q.logout();
-        else Q.setScenario(s);
-        resetResult();
-        renderUI();
-      });
-
-      document.getElementById("demo-uses").addEventListener("change", (e) => {
-        Q.setUsesRemaining(parseInt(e.target.value, 10));
-        resetResult();
-        renderUI();
-      });
-
-      document.getElementById("demo-reset").addEventListener("click", () => {
-        Q.reset();
-        scenarios.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
-        scenarios.querySelector("[data-scenario=logged_out]").classList.add("is-active");
-        resetResult();
-        renderUI();
-      });
-    }
-
-    document.getElementById("quota-tooltip").innerHTML = "";
-
-    window.WPSToolPage.initToolPage({
-      mode: "convert",
-      toolVerb: "convert your files",
-      continueLabel: "Continue to convert",
-      getFormats: () => ({ from: fromFormat, to: toFormat }),
-      bindFormatPicker() {
-        bindChips("chips-from", "from");
-        bindChips("chips-to", "to");
-        updateFormatUI();
-      },
-      bindDemoPanel,
-      onSyncDemo(state) {
-        document.getElementById("demo-uses").value = String(state.usesRemaining);
-      },
-      els: {
-        header: document.querySelector(".site-header"),
-        formatHub: document.getElementById("format-hub"),
-        loginGateCard: document.getElementById("login-gate-card"),
-        loginGateTitle: document.getElementById("login-gate-title"),
-        loginGateBody: document.getElementById("login-gate-body"),
-        loginGateIcon: document.getElementById("login-gate-icon"),
-        btnLoginPrimary: document.getElementById("btn-login-primary"),
-        btnHeaderLogin: document.getElementById("chrome-login-link"),
-        userLabel: document.getElementById("user-label"),
-        userAvatar: document.getElementById("user-avatar"),
-        quotaText: document.getElementById("quota-text"),
-        quotaInfo: document.getElementById("quota-info"),
-        quotaTooltip: document.getElementById("quota-tooltip"),
-        workspaceBody: document.getElementById("workspace-body"),
-        workspaceSteps: document.querySelectorAll("#workspace-steps .workspace-step"),
-        uploadZone: document.getElementById("upload-zone"),
-        fileInput: document.getElementById("file-input"),
-        btnSelectFile: document.getElementById("btn-select-file"),
-        processingPanel: document.getElementById("processing-panel"),
-        progressBar: document.getElementById("progress-bar"),
-        progressPercent: document.getElementById("progress-percent"),
-        progressEta: document.getElementById("progress-eta"),
-        progressPhase: document.getElementById("progress-phase"),
-        processFilename: document.getElementById("process-filename"),
-        processFilesize: document.getElementById("process-filesize"),
-        uploadSuccessPanel: document.getElementById("upload-success-panel"),
-        uploadSuccessFilename: document.getElementById("upload-success-filename"),
-        uploadSuccessFilesize: document.getElementById("upload-success-filesize"),
-        btnUploadBack: document.getElementById("btn-upload-back"),
-        btnUploadContinue: document.getElementById("btn-upload-continue"),
-        resultPanel: document.getElementById("result-panel"),
-        resultFilename: document.getElementById("result-filename"),
-        resultStats: document.getElementById("result-stats"),
-        downloadBtn: document.getElementById("download-btn"),
-        downloadLabel: document.getElementById("download-label"),
-        btnDownloadClient: document.getElementById("btn-download-client"),
-        stageGate: document.getElementById("stage-gate"),
-        stageTitle: document.getElementById("stage-title"),
-        stageBody: document.getElementById("stage-body"),
-        stagePrimary: document.getElementById("stage-primary"),
-        stageSecondary: document.getElementById("stage-secondary"),
-        stageIcon: document.getElementById("stage-icon")
-      }
-    });
     })();
   </script>
 </body>
