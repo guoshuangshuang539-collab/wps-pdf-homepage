@@ -28,7 +28,9 @@
       continueLabel: "Continue to compress",
       resultTitle: "Compression complete",
       downloadLabel: "Download compressed PDF",
-      uploadIcon: "compress"
+      uploadIcon: "compress",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "split-pdf": {
       slug: "split-pdf",
@@ -48,7 +50,10 @@
       continueLabel: "Continue to split",
       resultTitle: "Split complete",
       downloadLabel: "Download split PDF",
-      uploadIcon: "call_split"
+      uploadIcon: "call_split",
+      workflow: "split",
+      sharedPipeline: false,
+      singleFile: true
     },
     "merge-pdf": {
       slug: "merge-pdf",
@@ -68,7 +73,10 @@
       continueLabel: "Continue to merge",
       resultTitle: "Merge complete",
       downloadLabel: "Download merged PDF",
-      uploadIcon: "merge"
+      uploadIcon: "merge",
+      workflow: "merge",
+      sharedPipeline: false,
+      singleFile: false
     },
     "signing-pdf": {
       slug: "signing-pdf",
@@ -88,7 +96,10 @@
       continueLabel: "Continue to sign",
       resultTitle: "Signing complete",
       downloadLabel: "Download signed PDF",
-      uploadIcon: "draw"
+      uploadIcon: "draw",
+      workflow: "sign",
+      sharedPipeline: false,
+      singleFile: true
     },
     "convert-pdf": {
       slug: "convert-pdf",
@@ -110,7 +121,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download converted file",
-      uploadIcon: "sync_alt"
+      uploadIcon: "sync_alt",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "pdf-to-word": {
       slug: "pdf-to-word",
@@ -133,7 +146,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download Word file",
-      uploadIcon: "description"
+      uploadIcon: "description",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "pdf-to-excel": {
       slug: "pdf-to-excel",
@@ -156,7 +171,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download Excel file",
-      uploadIcon: "table_chart"
+      uploadIcon: "table_chart",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "pdf-to-ppt": {
       slug: "pdf-to-ppt",
@@ -179,7 +196,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download PPT file",
-      uploadIcon: "slideshow"
+      uploadIcon: "slideshow",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "pdf-to-jpg": {
       slug: "pdf-to-jpg",
@@ -202,7 +221,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download JPG file",
-      uploadIcon: "image"
+      uploadIcon: "image",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "word-to-pdf": {
       slug: "word-to-pdf",
@@ -225,7 +246,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download PDF",
-      uploadIcon: "picture_as_pdf"
+      uploadIcon: "picture_as_pdf",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "excel-to-pdf": {
       slug: "excel-to-pdf",
@@ -248,7 +271,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download PDF",
-      uploadIcon: "picture_as_pdf"
+      uploadIcon: "picture_as_pdf",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "ppt-to-pdf": {
       slug: "ppt-to-pdf",
@@ -271,7 +296,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download PDF",
-      uploadIcon: "picture_as_pdf"
+      uploadIcon: "picture_as_pdf",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "jpg-to-pdf": {
       slug: "jpg-to-pdf",
@@ -294,7 +321,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download PDF",
-      uploadIcon: "picture_as_pdf"
+      uploadIcon: "picture_as_pdf",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "xml-to-pdf": {
       slug: "xml-to-pdf",
@@ -317,7 +346,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download PDF",
-      uploadIcon: "code"
+      uploadIcon: "code",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "word-to-jpg": {
       slug: "word-to-jpg",
@@ -340,7 +371,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download JPG file",
-      uploadIcon: "image"
+      uploadIcon: "image",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "jpg-to-word": {
       slug: "jpg-to-word",
@@ -363,7 +396,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download Word file",
-      uploadIcon: "description"
+      uploadIcon: "description",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "mesh-converter": {
       slug: "mesh-converter",
@@ -387,7 +422,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download converted file",
-      uploadIcon: "view_in_ar"
+      uploadIcon: "view_in_ar",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "cad-converter": {
       slug: "cad-converter",
@@ -411,7 +448,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download converted file",
-      uploadIcon: "architecture"
+      uploadIcon: "architecture",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     },
     "bim-converter": {
       slug: "bim-converter",
@@ -435,7 +474,9 @@
       continueLabel: "Continue to convert",
       resultTitle: "Conversion complete",
       downloadLabel: "Download converted file",
-      uploadIcon: "apartment"
+      uploadIcon: "apartment",
+      autoProcessAfterUpload: true,
+      sharedPipeline: true
     }
   };
 

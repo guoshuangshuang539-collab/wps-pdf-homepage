@@ -74,7 +74,12 @@
           </div>
 
           <div class="processing-panel" id="processing-panel" hidden>
-            <h3 id="progress-phase">Processing</h3>
+            <div class="processing-panel-head">
+              <h3 id="progress-phase">Processing</h3>
+              <button class="batch-file-cancel" type="button" id="btn-pipeline-cancel" aria-label="Cancel">
+                <span class="material-symbols-rounded">close</span>
+              </button>
+            </div>
             <p class="process-meta"><span id="process-filename">file</span> · <span id="process-filesize">0 KB</span></p>
             <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
             <div class="progress-row">
@@ -89,8 +94,21 @@
             <h3>Upload complete</h3>
             <p class="process-meta"><span id="upload-success-filename">file</span> · <span id="upload-success-filesize">0 KB</span></p>
             <div class="upload-success-actions">
-              <button class="btn-secondary" type="button" id="btn-upload-back">Back</button>
               <button class="btn-primary" type="button" id="btn-upload-continue">Continue to merge</button>
+            </div>
+          </div>
+
+          <div class="batch-panel" id="batch-panel" hidden>
+            <ul class="batch-file-list" id="batch-file-list" role="list"></ul>
+            <div class="batch-footer" id="batch-footer">
+              <button class="btn-batch-zip" type="button" id="btn-batch-zip" hidden>
+                <span class="material-symbols-rounded">folder_zip</span>
+                Download all as ZIP
+              </button>
+              <button class="btn-secondary btn-batch-client" type="button" id="btn-batch-client" hidden>
+                Download for All Features
+              </button>
+              <p class="result-client-hint" id="batch-client-hint" hidden>Download Desktop to get more free quota</p>
             </div>
           </div>
 
@@ -111,6 +129,8 @@
             </div>
           </div>
 
+          <div id="special-workflow" hidden></div>
+
           <div class="stage-gate" id="stage-gate">
             <div class="stage-icon" aria-hidden="true"><span class="material-symbols-rounded" id="stage-icon">extension</span></div>
             <h3 id="stage-title"></h3>
@@ -120,6 +140,13 @@
               <button class="btn-ghost" type="button" id="stage-secondary"></button>
             </div>
           </div>
+        </div>
+
+        <div class="workspace-back-wrap" id="workspace-back-wrap" hidden>
+          <button class="btn-workspace-back" type="button" id="btn-workspace-back">
+            <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+            Back
+          </button>
         </div>
       </div>
     </section>
@@ -168,6 +195,7 @@
   <script src="../scripts/tool-content-library.js"></script>
   <script src="../scripts/tool-content-blocks.js"></script>
   <script src="../scripts/tool-page.js"></script>
+  <script src="../scripts/tool-workflows-extra.js"></script>
   <script src="../scripts/tool-boot.js"></script>
 </body>
 </html>

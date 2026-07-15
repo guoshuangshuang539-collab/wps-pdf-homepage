@@ -282,6 +282,21 @@
       qs("file-input").accept = tool.accept;
     }
 
+    const syncDemo = (state) => {
+      const sel = qs("demo-uses");
+      if (sel) sel.value = String(state.usesRemaining);
+    };
+
+    const workflow = tool.workflow;
+    if (workflow === "split" || workflow === "merge" || workflow === "sign") {
+      if (!global.WPSToolWorkflowsExtra?.init) {
+        console.error("[tool-boot] WPSToolWorkflowsExtra missing for workflow:", workflow);
+        return;
+      }
+      global.WPSToolWorkflowsExtra.init(tool, collectEls(), bindDemoPanel, syncDemo);
+      return;
+    }
+
     const mode = isConvert ? "convert" : "compress";
     const processLabelMap = {
       "compress-pdf": "Compressing",
@@ -294,6 +309,14 @@
       toolVerb: tool.toolVerb,
       continueLabel: tool.continueLabel || (isConvert ? "Continue to convert" : "Continue"),
       downloadLabel: tool.downloadLabel,
+      batchActionLabel: tool.stepLabels?.[1] || (isConvert ? "Convert" : "Process"),
+      batchSuccessLabel: tool.type === "3d-conversion" || isConvert
+        ? "Conversion succeeded!"
+        : (tool.slug === "compress-pdf"
+          ? "Compression succeeded!"
+          : `${tool.stepLabels?.[1] || "Processing"} succeeded!`),
+      sharedPipeline: Boolean(tool.sharedPipeline),
+      autoProcessAfterUpload: Boolean(tool.autoProcessAfterUpload),
       longRunning: is3d,
       etaProfile: is3d ? tool.hubId : "pdf",
       processingLabel: is3d
@@ -302,10 +325,7 @@
       getFormats: formatApi ? formatApi.getFormats : undefined,
       bindFormatPicker: formatApi ? formatApi.bindFormatPicker : undefined,
       bindDemoPanel,
-      onSyncDemo(state) {
-        const sel = qs("demo-uses");
-        if (sel) sel.value = String(state.usesRemaining);
-      },
+      onSyncDemo: syncDemo,
       els: collectEls()
     });
   }

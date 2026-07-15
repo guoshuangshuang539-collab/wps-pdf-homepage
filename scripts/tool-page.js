@@ -54,44 +54,59 @@
     return rem ? `~${m}m ${rem}s remaining` : `~${m}m remaining`;
   }
 
-  async function simulateUpload(onProgress, file) {
+  async function simulateUpload(onProgress, file, shouldAbort) {
     const durationMs = 900 + Math.min(file.size / 12000, 2200);
     const start = performance.now();
     return new Promise((resolve) => {
       const tick = () => {
+        if (shouldAbort?.()) {
+          resolve(false);
+          return;
+        }
         const elapsed = performance.now() - start;
         const p = Math.min(1, elapsed / durationMs);
         const remaining = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
         onProgress({ percent: Math.round(p * 100), eta: remaining, phase: "Uploading" });
-        if (p >= 1) resolve();
+        if (p >= 1) resolve(true);
         else requestAnimationFrame(tick);
       };
       tick();
     });
   }
 
-  async function simulateProcessing(onProgress, durationMs, phaseHint) {
+  async function simulateProcessing(onProgress, durationMs, phaseHint, shouldAbort) {
     const start = performance.now();
     return new Promise((resolve) => {
       const tick = () => {
+        if (shouldAbort?.()) {
+          resolve(false);
+          return;
+        }
         const elapsed = performance.now() - start;
         const p = Math.min(1, elapsed / durationMs);
         const remaining = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
         const phase = phaseHint
           || (p < 0.15 ? "Preparing" : p < 0.85 ? "Processing" : "Finalizing");
         onProgress({ percent: Math.round(p * 100), eta: remaining, phase });
-        if (p >= 1) resolve();
+        if (p >= 1) resolve(true);
         else requestAnimationFrame(tick);
       };
       tick();
     });
   }
 
-  async function processCompress(file, ratio, onProgress) {
-    await simulateProcessing(onProgress, 2200 + Math.min(file.size / 8000, 1800), "Compressing");
+  async function processCompress(file, ratio, onProgress, shouldAbort) {
+    const ok = await simulateProcessing(
+      onProgress,
+      2200 + Math.min(file.size / 8000, 1800),
+      "Compressing",
+      shouldAbort
+    );
+    if (!ok || shouldAbort?.()) return null;
     const reduction = ratio === "Smallest" ? 0.55 : ratio === "Recommended" ? 0.72 : 0.88;
     const outSize = Math.max(1024, Math.round(file.size * reduction));
     const buffer = await file.arrayBuffer();
+    if (shouldAbort?.()) return null;
     const blob = new Blob([buffer], { type: "application/pdf" });
     const base = file.name.replace(/\.pdf$/i, "") || "document";
     return {
@@ -118,7 +133,9 @@
     const profile = options?.etaProfile || "pdf";
     const duration = convertDurationMs(file, profile);
     const phaseHint = profile === "pdf" ? "Converting" : "Converting 3D model";
-    await simulateProcessing(onProgress, duration, phaseHint);
+    const shouldAbort = options?.shouldAbort;
+    const ok = await simulateProcessing(onProgress, duration, phaseHint, shouldAbort);
+    if (!ok || shouldAbort?.()) return null;
     const base = file.name.replace(/\.[^.]+$/, "") || "document";
     const outExt = extForFormat(to);
     let blob;
@@ -132,6 +149,7 @@
       blob = new Blob([pdfHeader], { type: "application/pdf" });
       filename = `${base}.pdf`;
     } else if (to === "JPG") {
+      if (shouldAbort?.()) return null;
       blob = new Blob([await file.arrayBuffer()], { type: file.type || "image/jpeg" });
       filename = `${base}.jpg`;
     } else {
@@ -157,6 +175,106 @@
       XML: ".xml,application/xml,text/xml"
     };
     return map[fmt] || "*/*";
+  }
+
+  /** Minimal ZIP (store / no compression) for multi-file “Download all”. */
+  function crc32(bytes) {
+    let c = ~0;
+    for (let i = 0; i < bytes.length; i += 1) {
+      c ^= bytes[i];
+      for (let k = 0; k < 8; k += 1) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+    }
+    return ~c >>> 0;
+  }
+
+  function u16(n) {
+    return new Uint8Array([n & 255, (n >>> 8) & 255]);
+  }
+
+  function u32(n) {
+    return new Uint8Array([n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]);
+  }
+
+  function concatBytes(parts) {
+    const total = parts.reduce((n, p) => n + p.length, 0);
+    const out = new Uint8Array(total);
+    let offset = 0;
+    parts.forEach((p) => {
+      out.set(p, offset);
+      offset += p.length;
+    });
+    return out;
+  }
+
+  async function createZipBlob(entries) {
+    const encoder = new TextEncoder();
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    for (const entry of entries) {
+      const nameBytes = encoder.encode(entry.name.replace(/\\/g, "/"));
+      const data = entry.data instanceof Uint8Array ? entry.data : new Uint8Array(await entry.data.arrayBuffer());
+      const crc = crc32(data);
+      const localHeader = concatBytes([
+        u32(0x04034b50),
+        u16(20),
+        u16(0),
+        u16(0),
+        u16(0),
+        u16(0),
+        u32(crc),
+        u32(data.length),
+        u32(data.length),
+        u16(nameBytes.length),
+        u16(0),
+        nameBytes
+      ]);
+      localParts.push(localHeader, data);
+      const centralHeader = concatBytes([
+        u32(0x02014b50),
+        u16(20),
+        u16(20),
+        u16(0),
+        u16(0),
+        u16(0),
+        u16(0),
+        u32(crc),
+        u32(data.length),
+        u32(data.length),
+        u16(nameBytes.length),
+        u16(0),
+        u16(0),
+        u16(0),
+        u16(0),
+        u32(0),
+        u32(offset),
+        nameBytes
+      ]);
+      centralParts.push(centralHeader);
+      offset += localHeader.length + data.length;
+    }
+
+    const centralDir = concatBytes(centralParts);
+    const end = concatBytes([
+      u32(0x06054b50),
+      u16(0),
+      u16(0),
+      u16(entries.length),
+      u16(entries.length),
+      u32(centralDir.length),
+      u32(offset),
+      u16(0)
+    ]);
+    return new Blob([concatBytes(localParts), centralDir, end], { type: "application/zip" });
+  }
+
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   function renderQuotaTooltip(el, Q, handlers) {
@@ -207,9 +325,21 @@
     let selectedRatio = "Recommended";
     let pendingFile = null;
     let pendingFiles = [];
+    let batchItems = [];
+    let batchPhase = "idle"; // idle | uploading | ready | processing | done
     let workflowView = "upload";
+    let runToken = 0;
     const longRunning = Boolean(config.longRunning);
     const etaProfile = config.etaProfile || "pdf";
+    const autoProcessAfterUpload = config.autoProcessAfterUpload !== false;
+    const sharedPipeline = Boolean(config.sharedPipeline);
+    const UPLOAD_PORTION = 0.35;
+    const batchActionLabel = config.batchActionLabel
+      || (config.mode === "compress" ? "Compress" : "Convert");
+    const processVerb = config.processingLabel
+      || (config.mode === "compress" ? "Compressing" : "Converting");
+    const successLabel = config.batchSuccessLabel
+      || (config.mode === "compress" ? "Compression succeeded!" : "Conversion succeeded!");
     const progressHint =
       config.progressHint
       || (etaProfile === "mesh"
@@ -219,6 +349,195 @@
           : etaProfile === "bim"
             ? "Typical BIM conversion takes about 1–10 min. Please keep this tab open."
             : "");
+
+    function estimateProcessSeconds(file) {
+      if (config.mode === "compress") {
+        return Math.max(1, Math.ceil((2200 + Math.min(file.size / 8000, 1800)) / 1000));
+      }
+      return Math.max(1, Math.ceil(convertDurationMs(file, etaProfile) / 1000));
+    }
+
+    function mapPipelineProgress(phase, localPercent) {
+      const p = Math.min(100, Math.max(0, Number(localPercent) || 0)) / 100;
+      if (phase === "upload") return Math.round(p * UPLOAD_PORTION * 100);
+      return Math.round((UPLOAD_PORTION + p * (1 - UPLOAD_PORTION)) * 100);
+    }
+
+    function mapPipelineEta(phase, localEta, file) {
+      const local = Math.max(0, Math.ceil(Number(localEta) || 0));
+      if (phase === "upload") return local + estimateProcessSeconds(file);
+      return local;
+    }
+
+    function ensureWorkspaceBack() {
+      let wrap = document.getElementById("workspace-back-wrap");
+      if (wrap) return wrap;
+      wrap = document.createElement("div");
+      wrap.id = "workspace-back-wrap";
+      wrap.className = "workspace-back-wrap";
+      wrap.hidden = true;
+      wrap.innerHTML = `
+        <button class="btn-workspace-back" type="button" id="btn-workspace-back">
+          <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+          Back
+        </button>`;
+      const card = document.querySelector(".workspace-card");
+      const host = document.querySelector(".tool-workspace-wrap") || card?.parentElement;
+      if (card && host) host.insertBefore(wrap, card.nextSibling);
+      else document.getElementById("workspace-body")?.parentElement?.appendChild(wrap);
+      return wrap;
+    }
+
+    function syncWorkspaceBackVisible() {
+      const wrap = ensureWorkspaceBack();
+      wrap.hidden = workflowView === "upload";
+    }
+
+    function ensureBatchPanel() {
+      let panel = document.getElementById("batch-panel");
+      if (panel) return panel;
+      panel = document.createElement("div");
+      panel.id = "batch-panel";
+      panel.className = "batch-panel";
+      panel.hidden = true;
+      panel.innerHTML = `
+        <ul class="batch-file-list" id="batch-file-list" role="list"></ul>
+        <div class="batch-footer" id="batch-footer">
+          <button class="btn-batch-zip" type="button" id="btn-batch-zip" hidden>
+            <span class="material-symbols-rounded">folder_zip</span>
+            Download all as ZIP
+          </button>
+          <button class="btn-secondary btn-batch-client" type="button" id="btn-batch-client" hidden>
+            Download for All Features
+          </button>
+          <p class="result-client-hint" id="batch-client-hint" hidden>Download Desktop to get more free quota</p>
+        </div>`;
+      const host = els.workspaceBody || document.getElementById("workspace-body");
+      const result = document.getElementById("result-panel");
+      if (host && result) host.insertBefore(panel, result);
+      else host?.appendChild(panel);
+      return panel;
+    }
+
+    function batchEls() {
+      ensureBatchPanel();
+      return {
+        panel: document.getElementById("batch-panel"),
+        list: document.getElementById("batch-file-list"),
+        action: document.getElementById("btn-batch-action"),
+        zip: document.getElementById("btn-batch-zip")
+      };
+    }
+
+    function revokeBatchUrls() {
+      batchItems.forEach((item) => {
+        if (item.downloadUrl) URL.revokeObjectURL(item.downloadUrl);
+      });
+    }
+
+    function clearBatch() {
+      revokeBatchUrls();
+      batchItems = [];
+      batchPhase = "idle";
+    }
+
+    function syncBatchFooter() {
+      const { action, zip } = batchEls();
+      if (action) action.hidden = true;
+      const doneCount = batchItems.filter((i) => i.status === "done").length;
+      const showBatchFooter = batchPhase === "done" && doneCount > 0;
+      if (zip) zip.hidden = !showBatchFooter;
+      const clientBtn = document.getElementById("btn-batch-client");
+      const clientHint = document.getElementById("batch-client-hint");
+      if (clientBtn) clientBtn.hidden = !showBatchFooter;
+      if (clientHint) clientHint.hidden = !showBatchFooter;
+    }
+
+    function batchRowHtml(item, index) {
+      const icon = `<span class="batch-file-icon" aria-hidden="true"><span class="material-symbols-rounded">picture_as_pdf</span></span>`;
+      const name = `<div class="batch-file-main">${icon}<span class="batch-file-name" title="${escapeHtml(item.file.name)}">${escapeHtml(item.file.name)}</span></div>`;
+      let mid = "";
+      let end = `<div class="batch-file-actions"></div>`;
+
+      if (item.status === "working" || item.status === "queued") {
+        mid = item.status === "working"
+          ? `
+          <div class="batch-file-progress">
+            <div class="progress-track"><div class="progress-bar" data-batch-bar style="width:${item.progress || 0}%"></div></div>
+            <div class="batch-file-progress-meta">
+              <span data-batch-meta>${escapeHtml(item.phaseLabel || "Processing")}… · ${escapeHtml(item.etaText || "")}</span>
+              <span data-batch-pct>${item.progress || 0}%</span>
+            </div>
+          </div>`
+          : `<div class="batch-file-status">Waiting…</div>`;
+        end = `
+          <div class="batch-file-actions">
+            <button class="batch-file-cancel" type="button" data-batch-cancel="${index}" aria-label="Cancel">
+              <span class="material-symbols-rounded">close</span>
+            </button>
+          </div>`;
+      } else if (item.status === "done" && item.result) {
+        const stats = item.result.stats || {};
+        let meta = formatBytes(stats.outputSize || item.result.blob.size);
+        if (stats.originalSize && stats.outputSize != null) {
+          const pct = (-((1 - stats.outputSize / stats.originalSize) * 100)).toFixed(2);
+          meta = `${formatBytes(stats.outputSize)} (${pct}%)`;
+        } else if (stats.from && stats.to) {
+          meta = `${stats.from} → ${stats.to}`;
+        }
+        mid = `
+          <div class="batch-file-status is-ok">
+            <span class="batch-status-ok" aria-hidden="true"><span class="material-symbols-rounded">check</span></span>
+            <span>${escapeHtml(successLabel)}</span>
+            <span class="batch-file-meta">${escapeHtml(meta)}</span>
+          </div>`;
+        end = `
+          <div class="batch-file-actions">
+            <a class="batch-file-download" href="${item.downloadUrl}" download="${escapeHtml(item.result.filename)}">Download</a>
+          </div>`;
+      } else if (item.status === "error") {
+        mid = `<div class="batch-file-status">Failed</div>`;
+      } else if (item.status === "cancelled") {
+        mid = `<div class="batch-file-status is-cancelled">Skipped</div>`;
+        end = `
+          <div class="batch-file-actions">
+            <span class="batch-file-cancel is-skipped" title="Skipped" aria-label="Skipped">
+              <span class="material-symbols-rounded">close</span>
+            </span>
+          </div>`;
+      }
+
+      return `<li class="batch-file-row" data-batch-index="${index}" data-batch-status="${item.status}">${name}${mid}${end}</li>`;
+    }
+
+    function renderBatchList() {
+      const { list } = batchEls();
+      if (!list) return;
+      list.innerHTML = batchItems.map((item, index) => batchRowHtml(item, index)).join("");
+      syncBatchFooter();
+    }
+
+    /** Progress ticks only — keep × buttons alive (full innerHTML kills click). */
+    function updateBatchProgressRow(index) {
+      const item = batchItems[index];
+      const { list } = batchEls();
+      if (!item || !list) return;
+      const row = list.querySelector(`[data-batch-index="${index}"]`);
+      if (!row || row.dataset.batchStatus !== item.status || item.status !== "working") {
+        renderBatchList();
+        return;
+      }
+      const bar = row.querySelector("[data-batch-bar]");
+      const meta = row.querySelector("[data-batch-meta]");
+      const pct = row.querySelector("[data-batch-pct]");
+      if (!bar || !meta || !pct) {
+        renderBatchList();
+        return;
+      }
+      bar.style.width = `${item.progress || 0}%`;
+      meta.textContent = `${item.phaseLabel || "Processing"}… · ${item.etaText || ""}`;
+      pct.textContent = `${item.progress || 0}%`;
+    }
 
     function ensureMultiFileModal() {
       let backdrop = document.getElementById("multifile-modal");
@@ -279,8 +598,7 @@
     }
 
     function openMultiFileModal() {
-      const modal = ensureMultiFileModal();
-      modal.hidden = false;
+      ensureMultiFileModal().hidden = false;
     }
 
     function closeMultiFileModal() {
@@ -323,11 +641,15 @@
 
     function setView(view) {
       workflowView = view;
+      const isBatch = view === "batch";
       els.uploadZone.hidden = view !== "upload";
       els.processingPanel.hidden = view !== "uploading" && view !== "processing";
       els.uploadSuccessPanel && (els.uploadSuccessPanel.hidden = view !== "upload-success");
       els.resultPanel.hidden = view !== "result";
+      const batchPanel = document.getElementById("batch-panel");
+      if (batchPanel) batchPanel.hidden = !isBatch;
       els.stageGate.classList.toggle("is-visible", view === "stage");
+      syncWorkspaceBackVisible();
     }
 
     function updateProgressUI({ percent, eta, phase }) {
@@ -338,9 +660,10 @@
         els.progressEta.classList.add("progress-eta");
       }
       els.progressPhase.textContent = phase;
-      els.processingPanel?.classList.toggle("is-long-running", longRunning && workflowView === "processing");
+      const inProcessPhase = phase && /compress|convert|process/i.test(phase) && !/^upload/i.test(phase);
+      els.processingPanel?.classList.toggle("is-long-running", longRunning && inProcessPhase);
       if (els.progressHint) {
-        const showHint = longRunning && workflowView === "processing" && progressHint;
+        const showHint = longRunning && inProcessPhase && progressHint;
         els.progressHint.hidden = !showHint;
         if (showHint) els.progressHint.textContent = progressHint;
       }
@@ -378,9 +701,7 @@
 
       const siteHeader = els.header || document.querySelector(".site-header");
       const chromeLogin = document.getElementById("chrome-login-link");
-      if (siteHeader) {
-        siteHeader.classList.toggle("is-logged-in", state.loggedIn);
-      }
+      if (siteHeader) siteHeader.classList.toggle("is-logged-in", state.loggedIn);
       if (chromeLogin) {
         chromeLogin.textContent = state.loggedIn ? state.userName : "login";
         chromeLogin.href = Links()?.SIGN_IN_URL || "#";
@@ -403,9 +724,12 @@
       renderQuotaTooltip(els.quotaTooltip, Q, { handleAction });
       updateUploadAvailability(state);
 
+      const busyBatch = workflowView === "batch";
+      const busySingle = workflowView === "uploading" || workflowView === "processing" || workflowView === "upload-success";
+
       if (!state.loggedIn) {
         els.workspaceBody.classList.remove("is-locked");
-        if (workflowView !== "uploading" && workflowView !== "processing" && workflowView !== "upload-success") {
+        if (!busyBatch && !busySingle) {
           setView("upload");
           updateSteps(0);
         }
@@ -414,17 +738,21 @@
 
       els.workspaceBody.classList.remove("is-locked");
 
-      if (state.stage !== Q.STAGES.ACTIVE) {
-        if (workflowView !== "uploading" && workflowView !== "processing" && workflowView !== "upload-success") {
-          setView("upload");
-          updateSteps(0);
-        }
+      if (state.stage !== Q.STAGES.ACTIVE && !busyBatch && !busySingle) {
+        setView("upload");
+        updateSteps(0);
+        return;
+      }
+
+      if (workflowView === "batch") {
+        setView("batch");
+        updateSteps(batchPhase === "done" ? 2 : (batchPhase === "processing" ? 1 : 0));
         return;
       }
 
       if (workflowView === "result" && els.resultPanel.dataset.visible === "true") {
         setView("result");
-        updateSteps(config.mode === "compress" ? 2 : 2);
+        updateSteps(2);
         return;
       }
 
@@ -456,12 +784,163 @@
       els.resultPanel.dataset.visible = "false";
       els.resultPanel.hidden = true;
       clearPendingFile();
+      clearBatch();
       workflowView = "upload";
+      const batchPanel = document.getElementById("batch-panel");
+      if (batchPanel) batchPanel.hidden = true;
     }
 
     function canStartUpload() {
       const state = Q.getState();
       return state.loggedIn && (state.isPremium || state.stage === Q.STAGES.ACTIVE);
+    }
+
+    async function runSingleFilePipeline(file, token, onTick, isCancelled) {
+      const cancelled = () => (token !== runToken) || (isCancelled && isCancelled());
+      const uploaded = await simulateUpload(({ percent, eta }) => {
+        if (cancelled()) return;
+        onTick({
+          phase: "upload",
+          phaseLabel: "Uploading",
+          progress: mapPipelineProgress("upload", percent),
+          eta: mapPipelineEta("upload", eta, file)
+        });
+      }, file, cancelled);
+      if (!uploaded || cancelled()) return null;
+
+      const onProcess = ({ percent, eta }) => {
+        if (cancelled()) return;
+        onTick({
+          phase: "process",
+          phaseLabel: processVerb,
+          progress: mapPipelineProgress("process", percent),
+          eta: mapPipelineEta("process", eta, file)
+        });
+      };
+
+      if (config.mode === "compress") {
+        return processCompress(file, selectedRatio, onProcess, cancelled);
+      }
+      const formats = config.getFormats
+        ? config.getFormats()
+        : { from: "PDF", to: "Word" };
+      return processConvert(file, formats.from, formats.to, onProcess, {
+        etaProfile,
+        shouldAbort: cancelled
+      });
+    }
+
+    async function startBatchUpload(list) {
+      if (!canStartUpload()) {
+        flashLoginGate();
+        return;
+      }
+      const consume = Q.consumeUse();
+      if (!consume.ok) {
+        renderUI();
+        flashLoginGate();
+        return;
+      }
+
+      const token = ++runToken;
+      clearBatch();
+      batchItems = list.map((file) => ({
+        file,
+        status: "queued",
+        progress: 0,
+        phaseLabel: "Waiting",
+        etaText: "",
+        cancelled: false,
+        result: null,
+        downloadUrl: null
+      }));
+      batchPhase = "processing";
+      setView("batch");
+      updateSteps(1);
+      renderBatchList();
+
+      try {
+        for (let i = 0; i < batchItems.length; i += 1) {
+          if (token !== runToken) return;
+          const item = batchItems[i];
+          if (item.cancelled) {
+            item.status = "cancelled";
+            renderBatchList();
+            continue;
+          }
+          item.status = "working";
+          item.progress = 0;
+          item.phaseLabel = "Uploading";
+          item.etaText = formatEta(mapPipelineEta("upload", 3, item.file));
+          renderBatchList();
+
+          const result = await runSingleFilePipeline(
+            item.file,
+            token,
+            (tick) => {
+              if (item.cancelled) return;
+              item.status = "working";
+              item.progress = tick.progress;
+              item.phaseLabel = tick.phaseLabel;
+              item.etaText = formatEta(tick.eta);
+              updateBatchProgressRow(i);
+            },
+            () => item.cancelled
+          );
+          if (token !== runToken) return;
+          if (item.cancelled || !result) {
+            item.status = "cancelled";
+            renderBatchList();
+            continue;
+          }
+          item.result = result;
+          item.downloadUrl = URL.createObjectURL(result.blob);
+          item.status = "done";
+          item.progress = 100;
+          renderBatchList();
+        }
+        if (token !== runToken) return;
+        const doneCount = batchItems.filter((i) => i.status === "done").length;
+        if (!doneCount) {
+          clearBatch();
+          setView("upload");
+          updateSteps(0);
+        } else {
+          batchPhase = "done";
+          renderBatchList();
+          updateSteps(2);
+        }
+      } catch (err) {
+        if (token !== runToken) return;
+        alert("Processing failed in demo: " + err.message);
+        clearBatch();
+        setView("upload");
+      }
+      renderUI();
+    }
+
+    function showSingleResult(result) {
+      lastResultUrl = URL.createObjectURL(result.blob);
+      els.resultFilename.textContent = result.filename;
+      if (result.stats.ratio) {
+        els.resultStats.innerHTML = `
+          <span>Original: ${formatBytes(result.stats.originalSize)}</span>
+          <span>Compressed: ${formatBytes(result.stats.outputSize)}</span>
+          <span class="result-saved">Saved ${formatBytes(result.stats.saved)} (${result.stats.ratio})</span>
+        `;
+      } else {
+        els.resultStats.innerHTML = `
+          <span>${result.stats.from} → ${result.stats.to}</span>
+          <span>Output: ${formatBytes(result.stats.outputSize)}</span>
+        `;
+      }
+      els.downloadBtn.href = lastResultUrl;
+      els.downloadBtn.download = result.filename;
+      const dlLabel = config.downloadLabel || (config.mode === "compress" ? "Download compressed PDF" : "Download converted file");
+      if (els.downloadLabel) els.downloadLabel.textContent = dlLabel;
+      els.resultPanel.dataset.visible = "true";
+      setView("result");
+      updateSteps(2);
     }
 
     async function startUpload(files) {
@@ -479,118 +958,119 @@
         return;
       }
 
-      pendingFiles = list;
-      const file = list[0];
-      pendingFile = file;
-      setView("uploading");
-      updateSteps(config.mode === "compress" ? 0 : 1);
-      const batchLabel = list.length > 1 ? ` · ${list.length} files` : "";
-      els.processFilename.textContent = file.name + batchLabel;
-      els.processFilesize.textContent = formatBytes(file.size);
-      els.progressBar.style.width = "0%";
-      if (els.progressHint) els.progressHint.hidden = true;
-
-      try {
-        await simulateUpload(updateProgressUI, file);
-        if (els.uploadSuccessFilename) {
-          els.uploadSuccessFilename.textContent = list.length > 1
-            ? `${list.length} files ready`
-            : file.name;
-        }
-        if (els.uploadSuccessFilesize) {
-          const total = list.reduce((sum, item) => sum + item.size, 0);
-          els.uploadSuccessFilesize.textContent = formatBytes(total);
-        }
-        setView("upload-success");
-        updateSteps(config.mode === "compress" ? 0 : 1);
-      } catch (err) {
-        alert("Upload failed in demo: " + err.message);
-        clearPendingFile();
-        setView("upload");
-      }
-      renderUI();
-    }
-
-    function handleUploadBack() {
-      clearPendingFile();
-      setView("upload");
-      updateSteps(0);
-      renderUI();
-    }
-
-    async function handleUploadContinue() {
-      if (!pendingFile) {
-        setView("upload");
-        renderUI();
-        return;
-      }
-
-      if (!canStartUpload()) {
-        flashLoginGate();
+      if (list.length > 1) {
+        await startBatchUpload(list);
         return;
       }
 
       const consume = Q.consumeUse();
       if (!consume.ok) {
-        clearPendingFile();
         renderUI();
         flashLoginGate();
         return;
       }
 
-      const file = pendingFile;
-      const batch = pendingFiles.length ? pendingFiles : [file];
+      const token = ++runToken;
+      pendingFiles = list;
+      const file = list[0];
+      pendingFile = file;
       setView("processing");
-      updateSteps(config.mode === "compress" ? 1 : 2);
+      updateSteps(1);
+      els.processFilename.textContent = file.name;
+      els.processFilesize.textContent = formatBytes(file.size);
       els.progressBar.style.width = "0%";
-      els.progressPhase.textContent = config.processingLabel || (config.mode === "compress" ? "Compressing" : "Converting");
+      if (els.progressHint) els.progressHint.hidden = true;
 
       try {
-        let result;
-        for (let i = 0; i < batch.length; i += 1) {
-          const current = batch[i];
-          const prefix = batch.length > 1 ? `File ${i + 1}/${batch.length}: ` : "";
-          els.processFilename.textContent = prefix + current.name;
-          els.processFilesize.textContent = formatBytes(current.size);
-          if (config.mode === "compress") {
-            result = await processCompress(current, selectedRatio, updateProgressUI);
-          } else {
-            const formats = config.getFormats();
-            result = await processConvert(current, formats.from, formats.to, updateProgressUI, { etaProfile });
-          }
-        }
-
+        const result = await runSingleFilePipeline(file, token, (tick) => {
+          updateProgressUI({
+            percent: tick.progress,
+            eta: tick.eta,
+            phase: tick.phaseLabel
+          });
+        });
+        if (token !== runToken) return;
+        if (!result) return;
         clearPendingFile();
-        lastResultUrl = URL.createObjectURL(result.blob);
-        els.resultFilename.textContent = batch.length > 1
-          ? `${result.filename} (+${batch.length - 1} more)`
-          : result.filename;
-        if (result.stats.ratio) {
-          els.resultStats.innerHTML = `
-            <span>Original: ${formatBytes(result.stats.originalSize)}</span>
-            <span>Compressed: ${formatBytes(result.stats.outputSize)}</span>
-            <span class="result-saved">Saved ${formatBytes(result.stats.saved)} (${result.stats.ratio})</span>
-          `;
-        } else {
-          els.resultStats.innerHTML = `
-            <span>${result.stats.from} → ${result.stats.to}</span>
-            <span>Output: ${formatBytes(result.stats.outputSize)}</span>
-            ${batch.length > 1 ? `<span>${batch.length} files processed</span>` : ""}
-          `;
-        }
-        els.downloadBtn.href = lastResultUrl;
-        els.downloadBtn.download = result.filename;
-        const dlLabel = config.downloadLabel || (config.mode === "compress" ? "Download compressed PDF" : "Download converted file");
-        if (els.downloadLabel) els.downloadLabel.textContent = dlLabel;
-        els.resultPanel.dataset.visible = "true";
-        setView("result");
-        updateSteps(config.mode === "compress" ? 2 : 2);
+        showSingleResult(result);
       } catch (err) {
+        if (token !== runToken) return;
         alert("Processing failed in demo: " + err.message);
         clearPendingFile();
         setView("upload");
       }
       renderUI();
+    }
+
+    function handleWorkspaceBack() {
+      runToken += 1;
+      resetResult();
+      setView("upload");
+      updateSteps(0);
+      renderUI();
+    }
+
+    function handleUploadBack() {
+      handleWorkspaceBack();
+    }
+
+    function removeBatchItem() {
+      // Mid-pipeline delete disabled — use × / Back to cancel.
+    }
+
+    function cancelBatchItem(index) {
+      const item = batchItems[index];
+      if (!item) return;
+      if (item.status === "done" || item.status === "cancelled") return;
+      // Abort this item only; batch loop continues with the next file.
+      item.cancelled = true;
+      item.status = "cancelled";
+      item.progress = 0;
+      item.phaseLabel = "Skipped";
+      item.etaText = "";
+      renderBatchList();
+
+      // If nothing left to run and no successes yet, end the batch UI.
+      // Do NOT bump runToken while other items are still queued/working —
+      // that would kill the whole batch instead of skipping one row.
+      const stillActive = batchItems.some((i) => i.status === "working" || i.status === "queued");
+      const doneCount = batchItems.filter((i) => i.status === "done").length;
+      if (!stillActive && !doneCount) {
+        runToken += 1;
+        clearBatch();
+        setView("upload");
+        updateSteps(0);
+        renderUI();
+      } else if (!stillActive && doneCount) {
+        batchPhase = "done";
+        renderBatchList();
+        updateSteps(2);
+      }
+    }
+
+    async function handleBatchAction() {
+      // Confirmation step removed — batch auto-runs after select.
+    }
+
+    async function handleBatchZip() {
+      const doneItems = batchItems.filter((i) => i.status === "done" && i.result);
+      if (!doneItems.length) return;
+      const entries = [];
+      for (const item of doneItems) {
+        entries.push({
+          name: item.result.filename,
+          data: new Uint8Array(await item.result.blob.arrayBuffer())
+        });
+      }
+      const zipBlob = await createZipBlob(entries);
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "wps-tools-results.zip";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     }
 
     function handleAction(action) {
@@ -654,7 +1134,30 @@
     });
 
     els.btnUploadBack?.addEventListener("click", handleUploadBack);
-    els.btnUploadContinue?.addEventListener("click", handleUploadContinue);
+    els.btnUploadContinue?.addEventListener("click", () => handleUploadContinue());
+
+    ensureWorkspaceBack();
+    document.getElementById("btn-workspace-back")?.addEventListener("click", handleWorkspaceBack);
+
+    ensureBatchPanel();
+    // pointerdown: cancel before a progress frame can destroy the button mid-click
+    document.getElementById("batch-panel")?.addEventListener("pointerdown", (e) => {
+      const cancel = e.target.closest("[data-batch-cancel]");
+      if (!cancel || cancel.classList.contains("is-skipped")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      cancelBatchItem(Number(cancel.dataset.batchCancel));
+    });
+    document.getElementById("batch-panel")?.addEventListener("click", (e) => {
+      const del = e.target.closest("[data-batch-delete]");
+      if (del) removeBatchItem(Number(del.dataset.batchDelete));
+    });
+    document.getElementById("btn-batch-action")?.addEventListener("click", handleBatchAction);
+    document.getElementById("btn-batch-zip")?.addEventListener("click", handleBatchZip);
+    document.getElementById("btn-batch-client")?.addEventListener("click", () => {
+      Links()?.openDownload("auto");
+    });
+    document.getElementById("btn-pipeline-cancel")?.addEventListener("click", handleWorkspaceBack);
 
     els.stagePrimary?.addEventListener("click", () => {
       const state = Q.getState();
@@ -685,9 +1188,7 @@
     });
 
     bindQuotaTooltip(els, Q, { handleAction });
-
     config.bindFormatPicker?.();
-
     config.bindDemoPanel?.(renderUI, resetResult);
 
     if (els.btnUploadContinue && config.continueLabel) {
@@ -701,6 +1202,10 @@
   global.WPSToolPage = {
     initToolPage,
     formatBytes,
+    formatEta,
+    simulateUpload,
+    simulateProcessing,
+    createZipBlob,
     processCompress,
     processConvert,
     acceptForFormat
