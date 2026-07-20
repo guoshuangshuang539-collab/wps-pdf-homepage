@@ -277,35 +277,19 @@
       .replace(/"/g, "&quot;");
   }
 
-  function renderQuotaTooltip(el, Q, handlers) {
+  function renderQuotaTooltip(el, Q) {
     if (!el) return;
     const data = Q.getQuotaRules();
-    const rows = data.rules.map((rule) => {
-      const hint = rule.hint ? `<span class="quota-rule-hint">${rule.hint}</span>` : "";
-      const btn = rule.action
-        ? `<button type="button" class="quota-tooltip-action" data-quota-action="${rule.action}">${rule.label}</button>`
-        : "";
-      return `<li><span class="quota-rule-text"><span class="quota-rule-main">${rule.text}</span>${hint}</span>${btn}</li>`;
-    }).join("");
-    el.innerHTML = `
-      <div class="quota-tooltip-head">
-        <strong>${data.title}</strong>
-        <span>${data.subtitle}</span>
-      </div>
-      <ul class="quota-tooltip-rules">${rows}</ul>
-    `;
-    el.querySelectorAll("[data-quota-action]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        handlers.handleAction(btn.dataset.quotaAction);
-        el.classList.remove("is-visible");
-      });
-    });
+    const Modals = global.WPSQuotaModals;
+    el.innerHTML = Modals?.renderQuotaTooltipHTML
+      ? Modals.renderQuotaTooltipHTML(data)
+      : `<div class="quota-tooltip-head"><strong>${data.title}</strong></div>`;
+    Modals?.wireQuotaTooltipActions?.(el);
   }
 
-  function bindQuotaTooltip(els, Q, handlers) {
+  function bindQuotaTooltip(els, Q) {
     if (!els.quotaTooltip) return;
-    renderQuotaTooltip(els.quotaTooltip, Q, handlers);
+    renderQuotaTooltip(els.quotaTooltip, Q);
     const wrap = els.quotaInfo?.closest(".quota-wrap");
     let hideTimer;
     const show = () => { clearTimeout(hideTimer); els.quotaTooltip.classList.add("is-visible"); };
@@ -539,104 +523,12 @@
       pct.textContent = `${item.progress || 0}%`;
     }
 
-    function ensureMultiFileModal() {
-      let backdrop = document.getElementById("multifile-modal");
-      if (backdrop) return backdrop;
-      backdrop = document.createElement("div");
-      backdrop.id = "multifile-modal";
-      backdrop.className = "multifile-modal-backdrop";
-      backdrop.hidden = true;
-      backdrop.setAttribute("role", "dialog");
-      backdrop.setAttribute("aria-modal", "true");
-      backdrop.setAttribute("aria-labelledby", "multifile-modal-title");
-      backdrop.innerHTML = `
-        <div class="multifile-modal">
-          <button class="multifile-modal-close" type="button" aria-label="Close" data-multifile-close>
-            <span class="material-symbols-rounded">close</span>
-          </button>
-          <div class="multifile-modal-art" aria-hidden="true">
-            <div class="art-window">
-              <span class="art-tile"></span><span class="art-tile"></span><span class="art-tile"></span>
-              <span class="art-tile"></span><span class="art-tile"></span><span class="art-tile"></span>
-            </div>
-            <span class="art-lock"><span class="material-symbols-rounded">lock</span></span>
-          </div>
-          <p class="multifile-modal-copy" id="multifile-modal-title">
-            Free users can process only 1 file every time. Upgrade to WPS Pro+ and enjoy unlimited PDF features now!
-          </p>
-          <div class="multifile-modal-actions">
-            <button class="btn-download-free" type="button" data-multifile-download>
-              <span class="material-symbols-rounded">download</span>
-              Free Download
-            </button>
-            <button class="btn-start-trial" type="button" data-multifile-trial>
-              <span class="material-symbols-rounded">diamond</span>
-              Start Free Trial
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(backdrop);
-      backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop || e.target.closest("[data-multifile-close]")) closeMultiFileModal();
-      });
-      backdrop.querySelector("[data-multifile-download]")?.addEventListener("click", () => {
-        Links()?.openDownload("auto");
-        closeMultiFileModal();
-      });
-      backdrop.querySelector("[data-multifile-trial]")?.addEventListener("click", () => {
-        Links()?.openPremium();
-        Q.upgradePremium();
-        closeMultiFileModal();
-        resetResult();
-        renderUI();
-      });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && !backdrop.hidden) closeMultiFileModal();
-      });
-      return backdrop;
+    function getToolSlug() {
+      return document.body?.dataset?.toolSlug || "";
     }
 
-    function openMultiFileModal() {
-      ensureMultiFileModal().hidden = false;
-    }
-
-    function closeMultiFileModal() {
-      const modal = document.getElementById("multifile-modal");
-      if (modal) modal.hidden = true;
-    }
-
-    function scrollToLoginGate() {
-      const gate = document.getElementById("login-gate");
-      if (!gate) return;
-      const headerH = document.querySelector(".site-header")?.offsetHeight || 64;
-      const top = gate.getBoundingClientRect().top + window.scrollY - headerH - 16;
-      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-    }
-
-    function flashLoginGate() {
-      const gate = document.getElementById("login-gate");
-      const card = els.loginGateCard;
-      if (card) {
-        card.classList.remove("is-flash");
-        void card.offsetWidth;
-        card.classList.add("is-flash");
-        setTimeout(() => card.classList.remove("is-flash"), 1600);
-      }
-      if (gate) {
-        gate.classList.remove("is-flash");
-        void gate.offsetWidth;
-        gate.classList.add("is-flash");
-        setTimeout(() => gate.classList.remove("is-flash"), 1600);
-      }
-      scrollToLoginGate();
-    }
-
-    function updateUploadAvailability(state) {
-      const blocked = !state.isPremium && (!state.loggedIn || state.stage !== Q.STAGES.ACTIVE);
-      els.uploadZone?.classList.toggle("is-quota-blocked", blocked);
-      els.btnSelectFile?.classList.toggle("is-quota-blocked", blocked);
-      els.btnSelectFile?.setAttribute("aria-disabled", blocked ? "true" : "false");
+    function interceptFiles(files) {
+      return global.WPSQuotaModals?.interceptUpload(files, getToolSlug());
     }
 
     function setView(view) {
@@ -648,7 +540,6 @@
       els.resultPanel.hidden = view !== "result";
       const batchPanel = document.getElementById("batch-panel");
       if (batchPanel) batchPanel.hidden = !isBatch;
-      els.stageGate.classList.toggle("is-visible", view === "stage");
       syncWorkspaceBackVisible();
     }
 
@@ -670,24 +561,12 @@
     }
 
     function updateSteps(active) {
-      els.workspaceSteps?.forEach((step, i) => {
+      const steps = els.workspaceSteps?.length
+        ? els.workspaceSteps
+        : document.querySelectorAll("#workspace-steps .workspace-step");
+      steps.forEach((step, i) => {
         step.classList.toggle("is-active", i === active);
       });
-    }
-
-    function updateLoginGate(state) {
-      const stage = state.loggedIn ? state.stage : Q.STAGES.NEED_LOGIN;
-      const copy = Q.getLoginGateCopy(stage, config.toolVerb);
-      const titleEl = els.loginGateTitle || els.loginGateCard?.querySelector("h2");
-      const bodyEl = els.loginGateBody || els.loginGateCard?.querySelector(".login-gate-text p");
-      const iconEl = els.loginGateIcon || els.loginGateCard?.querySelector(".login-gate-icon .material-symbols-rounded");
-      if (titleEl) titleEl.textContent = copy.title;
-      if (bodyEl) bodyEl.innerHTML = copy.body;
-      if (iconEl) iconEl.textContent = copy.icon;
-      if (els.btnLoginPrimary) {
-        els.btnLoginPrimary.textContent = copy.button;
-        els.btnLoginPrimary.dataset.action = copy.action;
-      }
     }
 
     function clearPendingFile() {
@@ -707,75 +586,26 @@
         chromeLogin.href = Links()?.SIGN_IN_URL || "#";
       }
 
-      const showGate = !state.loggedIn || (!state.isPremium && state.stage !== Q.STAGES.ACTIVE);
-      if (showGate) {
-        updateLoginGate(state);
-        els.loginGateCard?.classList.remove("is-hidden");
-        els.formatHub?.classList.add("is-dimmed");
-      } else {
-        els.loginGateCard?.classList.add("is-hidden");
-        els.formatHub?.classList.remove("is-dimmed");
-      }
+      els.formatHub?.classList.remove("is-dimmed");
+      els.workspaceBody?.classList.remove("is-locked");
+      els.uploadZone?.classList.remove("is-quota-blocked");
+      els.btnSelectFile?.classList.remove("is-quota-blocked");
+      els.btnSelectFile?.setAttribute("aria-disabled", "false");
 
       const summary = Q.getQuotaSummary(state);
       els.quotaText.innerHTML = summary.sub
         ? `${summary.text} <span class="quota-sub">(${summary.sub})</span>`
         : summary.text;
-      renderQuotaTooltip(els.quotaTooltip, Q, { handleAction });
-      updateUploadAvailability(state);
+      renderQuotaTooltip(els.quotaTooltip, Q);
 
       const busyBatch = workflowView === "batch";
       const busySingle = workflowView === "uploading" || workflowView === "processing" || workflowView === "upload-success";
-
-      if (!state.loggedIn) {
-        els.workspaceBody.classList.remove("is-locked");
-        if (!busyBatch && !busySingle) {
-          setView("upload");
-          updateSteps(0);
-        }
-        return;
-      }
-
-      els.workspaceBody.classList.remove("is-locked");
-
-      if (state.stage !== Q.STAGES.ACTIVE && !busyBatch && !busySingle) {
-        setView("upload");
-        updateSteps(0);
-        return;
-      }
-
-      if (workflowView === "batch") {
-        setView("batch");
-        updateSteps(batchPhase === "done" ? 2 : (batchPhase === "processing" ? 1 : 0));
-        return;
-      }
-
-      if (workflowView === "result" && els.resultPanel.dataset.visible === "true") {
-        setView("result");
-        updateSteps(2);
-        return;
-      }
-
-      if (workflowView === "uploading") {
-        setView("uploading");
-        updateSteps(config.mode === "compress" ? 0 : 1);
-        return;
-      }
-
-      if (workflowView === "upload-success") {
-        setView("upload-success");
-        updateSteps(config.mode === "compress" ? 0 : 1);
-        return;
-      }
-
-      if (workflowView === "processing") {
-        setView("processing");
-        updateSteps(config.mode === "compress" ? 1 : 2);
-        return;
-      }
-
-      setView("upload");
-      updateSteps(0);
+      if (busyBatch) { setView("batch"); return; }
+      if (workflowView === "result" && els.resultPanel.dataset.visible === "true") { setView("result"); return; }
+      if (workflowView === "uploading") { setView("uploading"); return; }
+      if (workflowView === "upload-success") { setView("upload-success"); return; }
+      if (workflowView === "processing") { setView("processing"); return; }
+      if (!busySingle) setView("upload");
     }
 
     function resetResult() {
@@ -788,11 +618,6 @@
       workflowView = "upload";
       const batchPanel = document.getElementById("batch-panel");
       if (batchPanel) batchPanel.hidden = true;
-    }
-
-    function canStartUpload() {
-      const state = Q.getState();
-      return state.loggedIn && (state.isPremium || state.stage === Q.STAGES.ACTIVE);
     }
 
     async function runSingleFilePipeline(file, token, onTick, isCancelled) {
@@ -831,14 +656,10 @@
     }
 
     async function startBatchUpload(list) {
-      if (!canStartUpload()) {
-        flashLoginGate();
-        return;
-      }
       const consume = Q.consumeUse();
       if (!consume.ok) {
+        global.WPSQuotaModals?.openQuotaExhausted();
         renderUI();
-        flashLoginGate();
         return;
       }
 
@@ -944,19 +765,9 @@
     }
 
     async function startUpload(files) {
-      if (!canStartUpload()) {
-        flashLoginGate();
-        return;
-      }
-
       const list = Array.from(files || []).filter(Boolean);
       if (!list.length) return;
-
-      const state = Q.getState();
-      if (list.length > 1 && !state.isPremium) {
-        openMultiFileModal();
-        return;
-      }
+      if (interceptFiles(list)) return;
 
       if (list.length > 1) {
         await startBatchUpload(list);
@@ -965,8 +776,8 @@
 
       const consume = Q.consumeUse();
       if (!consume.ok) {
+        global.WPSQuotaModals?.openQuotaExhausted();
         renderUI();
-        flashLoginGate();
         return;
       }
 
@@ -975,7 +786,6 @@
       const file = list[0];
       pendingFile = file;
       setView("processing");
-      updateSteps(1);
       els.processFilename.textContent = file.name;
       els.processFilesize.textContent = formatBytes(file.size);
       els.progressBar.style.width = "0%";
@@ -1076,14 +886,8 @@
     function handleAction(action) {
       const L = Links();
       if (action === "login") L?.openSignIn();
-      else if (action === "extension") { L?.openExtension(); Q.installExtension(); resetResult(); renderUI(); }
-      else if (action === "desktop") { L?.openDownload("auto"); Q.installDesktop(); resetResult(); renderUI(); }
       else if (action === "premium") { L?.openPremium(); Q.upgradePremium(); resetResult(); renderUI(); }
     }
-
-    els.btnLoginPrimary?.addEventListener("click", () => {
-      handleAction(els.btnLoginPrimary.dataset.action || "login");
-    });
 
     document.getElementById("chrome-login-link")?.addEventListener("click", (e) => {
       const state = Q.getState();
@@ -1091,16 +895,9 @@
       e.preventDefault();
     });
 
-    let dragGateFlashTimer = null;
 
-    els.btnSelectFile?.addEventListener("click", (e) => {
-      if (!canStartUpload()) { e.preventDefault(); flashLoginGate(); return; }
+    els.btnSelectFile?.addEventListener("click", () => {
       els.fileInput.click();
-    });
-
-    els.uploadZone?.addEventListener("click", (e) => {
-      if (e.target.closest("#btn-select-file")) return;
-      if (!canStartUpload()) flashLoginGate();
     });
 
     els.fileInput?.addEventListener("change", (e) => {
@@ -1111,15 +908,8 @@
     ["dragenter", "dragover"].forEach((ev) => {
       els.uploadZone?.addEventListener(ev, (e) => {
         e.preventDefault();
-        if (canStartUpload()) {
-          els.uploadZone.classList.add("is-dragover");
-          els.uploadZone.classList.remove("is-drag-denied");
-        } else {
-          els.uploadZone.classList.remove("is-dragover");
-          els.uploadZone.classList.add("is-drag-denied");
-          clearTimeout(dragGateFlashTimer);
-          dragGateFlashTimer = setTimeout(() => flashLoginGate(), 120);
-        }
+        els.uploadZone.classList.add("is-dragover");
+        els.uploadZone.classList.remove("is-drag-denied");
       });
     });
     ["dragleave", "drop"].forEach((ev) => {
@@ -1127,8 +917,8 @@
         e.preventDefault();
         els.uploadZone.classList.remove("is-dragover", "is-drag-denied");
         if (ev === "drop") {
-          if (!canStartUpload()) flashLoginGate();
-          else startUpload(e.dataTransfer.files);
+          const list = Array.from(e.dataTransfer.files || []);
+          if (!interceptFiles(list)) startUpload(e.dataTransfer.files);
         }
       });
     });
@@ -1159,22 +949,6 @@
     });
     document.getElementById("btn-pipeline-cancel")?.addEventListener("click", handleWorkspaceBack);
 
-    els.stagePrimary?.addEventListener("click", () => {
-      const state = Q.getState();
-      if (state.stage === Q.STAGES.NEED_EXTENSION) handleAction("extension");
-      else if (state.stage === Q.STAGES.NEED_DESKTOP) handleAction("desktop");
-      else if (state.stage === Q.STAGES.NEED_PREMIUM) handleAction("premium");
-      resetResult();
-      renderUI();
-    });
-
-    els.stageSecondary?.addEventListener("click", () => {
-      const state = Q.getState();
-      if (state.stage === Q.STAGES.NEED_PREMIUM) {
-        document.getElementById("related-tools")?.scrollIntoView({ behavior: "smooth" });
-      }
-    });
-
     els.btnDownloadClient?.addEventListener("click", () => {
       Links()?.openDownload("auto");
     });
@@ -1187,7 +961,7 @@
       });
     });
 
-    bindQuotaTooltip(els, Q, { handleAction });
+    bindQuotaTooltip(els, Q);
     config.bindFormatPicker?.();
     config.bindDemoPanel?.(renderUI, resetResult);
 
@@ -1196,6 +970,10 @@
     }
 
     Links()?.wireDownloadTriggers(document.getElementById("tool-content-mount"));
+    global.WPSQuotaModals?.wireUpgradeListener?.(() => {
+      resetResult();
+      renderUI();
+    });
     renderUI();
   }
 

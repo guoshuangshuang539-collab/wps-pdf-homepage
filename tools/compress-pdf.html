@@ -27,19 +27,6 @@
       <p class="subtitle" id="page-subtitle">WPS PDF compressor helps reduce PDF file size online without losing quality. Upload, compress, and download securely.</p>
     </section>
 
-    <section class="login-gate" id="login-gate" aria-live="polite">
-      <div class="login-gate-card" id="login-gate-card">
-        <div class="login-gate-left">
-          <div class="login-gate-icon" aria-hidden="true"><span class="material-symbols-rounded" id="login-gate-icon">lock</span></div>
-          <div class="login-gate-text">
-            <h2 id="login-gate-title">Log in to compress your PDF</h2>
-            <p id="login-gate-body">Online tools require a free WPS account. Log in to get <strong>3 site-wide uses</strong> today — shared across all tools on pdf.wps.com.</p>
-          </div>
-        </div>
-        <button class="btn-primary" type="button" id="btn-login-primary">Login</button>
-      </div>
-    </section>
-
     <section class="tool-workspace-wrap">
       <div class="workspace-card">
         
@@ -54,7 +41,7 @@
           <div class="quota-wrap">
             <span class="quota-badge" id="quota-badge">
               <span class="material-symbols-rounded" style="font-size:16px">bolt</span>
-              <span id="quota-text"><strong>—</strong> <span class="quota-sub">(sign in required)</span></span>
+              <span id="quota-text"><strong>10</strong> of 10 free uses left today</span>
             </span>
             <button class="quota-info-btn" type="button" id="quota-info" aria-label="Quota rules" title="Quota rules">i</button>
             <div class="quota-tooltip" id="quota-tooltip" role="tooltip"></div>
@@ -130,16 +117,6 @@
           </div>
 
           <div id="special-workflow" hidden></div>
-
-          <div class="stage-gate" id="stage-gate">
-            <div class="stage-icon" aria-hidden="true"><span class="material-symbols-rounded" id="stage-icon">extension</span></div>
-            <h3 id="stage-title"></h3>
-            <p id="stage-body"></p>
-            <div class="stage-actions">
-              <button class="btn-primary" type="button" id="stage-primary"></button>
-              <button class="btn-ghost" type="button" id="stage-secondary"></button>
-            </div>
-          </div>
         </div>
 
         <div class="workspace-back-wrap" id="workspace-back-wrap" hidden>
@@ -160,20 +137,23 @@
   
   <aside class="demo-panel" aria-label="Demo controls">
     <h4>Demo controls (for R&amp;D)</h4>
-    <p style="margin:0 0 8px;color:var(--soft-muted)">Quick scenarios:</p>
+    <p style="margin:0 0 8px;color:var(--soft-muted)">Intercept test scenarios:</p>
     <div class="demo-scenario-btns" id="demo-scenarios">
-      <button type="button" data-scenario="logged_out" class="is-active">① Not logged in</button>
-      <button type="button" data-scenario="logged_in">② Logged in (3 uses)</button>
-      <button type="button" data-scenario="logged_in_exhausted">③ Logged in — 0 uses</button>
-      <button type="button" data-scenario="extension">④ + Extension (3 uses)</button>
-      <button type="button" data-scenario="extension_exhausted">⑤ Extension — 0 uses</button>
-      <button type="button" data-scenario="desktop">⑥ + Desktop (3 uses)</button>
-      <button type="button" data-scenario="desktop_exhausted">⑦ Desktop — 0 uses</button>
-      <button type="button" data-scenario="exhausted">⑧ All exhausted</button>
-      <button type="button" data-scenario="premium">⑨ Premium (∞)</button>
+      <button type="button" data-scenario="guest_exhausted">① Free — quota exhausted</button>
+      <button type="button" data-scenario="guest_file_limit">② Free — file size limit</button>
+      <button type="button" data-scenario="guest_count_limit">③ Free — too many files</button>
+      <button type="button" data-scenario="member_ok">④ Pro+ — normal use</button>
+      <button type="button" data-scenario="member_file_limit">⑤ Pro+ — file &gt;200 MB</button>
     </div>
     <label>Uses left (manual)
       <select id="demo-uses">
+        <option value="10">10</option>
+        <option value="9">9</option>
+        <option value="8">8</option>
+        <option value="7">7</option>
+        <option value="6">6</option>
+        <option value="5">5</option>
+        <option value="4">4</option>
         <option value="3">3</option>
         <option value="2">2</option>
         <option value="1">1</option>
@@ -192,6 +172,7 @@
   <script src="../scripts/site-chrome.js"></script>
   <script src="../scripts/demo-panel.js"></script>
   <script src="../scripts/tool-quota-flow.js"></script>
+  <script src="../scripts/tool-quota-modals.js"></script>
   <script src="../scripts/tool-content-library.js"></script>
   <script src="../scripts/tool-content-blocks.js"></script>
   <script src="../scripts/tool-page.js"></script>

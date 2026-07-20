@@ -76,9 +76,7 @@
       if (!btn) return;
       scenarios.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
       btn.classList.add("is-active");
-      const s = btn.dataset.scenario;
-      if (s === "logged_out") Q.logout();
-      else Q.setScenario(s);
+      Q.setScenario(btn.dataset.scenario);
       resetResult();
       renderUI();
     });
@@ -92,7 +90,6 @@
     qs("demo-reset")?.addEventListener("click", () => {
       Q.reset();
       scenarios.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
-      scenarios.querySelector("[data-scenario=logged_out]")?.classList.add("is-active");
       resetResult();
       renderUI();
     });

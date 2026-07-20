@@ -71,86 +71,28 @@
       steps.forEach((step, i) => step.classList.toggle("is-active", i === active));
     }
 
-    function scrollToLoginGate() {
-      const gate = document.getElementById("login-gate");
-      if (!gate) return;
-      const headerH = document.querySelector(".site-header")?.offsetHeight || 64;
-      const top = gate.getBoundingClientRect().top + window.scrollY - headerH - 16;
-      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    function getToolSlug() {
+      return document.body?.dataset?.toolSlug || tool.slug || "";
     }
 
-    function flashLoginGate() {
-      const gate = document.getElementById("login-gate");
-      const card = els.loginGateCard;
-      [card, gate].forEach((el) => {
-        if (!el) return;
-        el.classList.remove("is-flash");
-        void el.offsetWidth;
-        el.classList.add("is-flash");
-        setTimeout(() => el.classList.remove("is-flash"), 1600);
-      });
-      scrollToLoginGate();
-    }
-
-    function canStartUpload() {
-      const state = Q.getState();
-      return state.loggedIn && (state.isPremium || state.stage === Q.STAGES.ACTIVE);
-    }
-
-    function updateUploadAvailability(state) {
-      const blocked = !state.isPremium && (!state.loggedIn || state.stage !== Q.STAGES.ACTIVE);
-      els.uploadZone?.classList.toggle("is-quota-blocked", blocked);
-      els.btnSelectFile?.classList.toggle("is-quota-blocked", blocked);
-      els.btnSelectFile?.setAttribute("aria-disabled", blocked ? "true" : "false");
+    function interceptFiles(files) {
+      return global.WPSQuotaModals?.interceptUpload(files, getToolSlug());
     }
 
     function handleAction(action) {
       const L = Links();
       if (action === "login") L?.openSignIn();
-      else if (action === "extension") { L?.openExtension(); Q.installExtension(); resetToUpload(); }
-      else if (action === "desktop") { L?.openDownload("auto"); Q.installDesktop(); resetToUpload(); }
       else if (action === "premium") { L?.openPremium(); Q.upgradePremium(); resetToUpload(); }
-    }
-
-    function updateLoginGate(state) {
-      const stage = state.loggedIn ? state.stage : Q.STAGES.NEED_LOGIN;
-      const copy = Q.getLoginGateCopy(stage, tool.toolVerb);
-      const titleEl = els.loginGateTitle || els.loginGateCard?.querySelector("h2");
-      const bodyEl = els.loginGateBody || els.loginGateCard?.querySelector(".login-gate-text p");
-      const iconEl = els.loginGateIcon || els.loginGateCard?.querySelector(".login-gate-icon .material-symbols-rounded");
-      if (titleEl) titleEl.textContent = copy.title;
-      if (bodyEl) bodyEl.innerHTML = copy.body;
-      if (iconEl) iconEl.textContent = copy.icon;
-      if (els.btnLoginPrimary) {
-        els.btnLoginPrimary.textContent = copy.button;
-        els.btnLoginPrimary.dataset.action = copy.action;
-      }
     }
 
     function renderQuotaTooltip() {
       const el = els.quotaTooltip;
       if (!el || !Q.getQuotaRules) return;
-      const data = Q.getQuotaRules();
-      const rows = data.rules.map((rule) => {
-        const hint = rule.hint ? `<span class="quota-rule-hint">${rule.hint}</span>` : "";
-        const btn = rule.action
-          ? `<button type="button" class="quota-tooltip-action" data-quota-action="${rule.action}">${rule.label}</button>`
-          : "";
-        return `<li><span class="quota-rule-text"><span class="quota-rule-main">${rule.text}</span>${hint}</span>${btn}</li>`;
-      }).join("");
-      el.innerHTML = `
-        <div class="quota-tooltip-head">
-          <strong>${data.title}</strong>
-          <span>${data.subtitle}</span>
-        </div>
-        <ul class="quota-tooltip-rules">${rows}</ul>`;
-      el.querySelectorAll("[data-quota-action]").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          handleAction(btn.dataset.quotaAction);
-          el.classList.remove("is-visible");
-        });
-      });
+      const Modals = global.WPSQuotaModals;
+      el.innerHTML = Modals?.renderQuotaTooltipHTML
+        ? Modals.renderQuotaTooltipHTML(Q.getQuotaRules())
+        : "";
+      Modals?.wireQuotaTooltipActions?.(el);
     }
 
     function bindQuotaTooltip() {
@@ -307,14 +249,6 @@
         chromeLogin.href = Links()?.SIGN_IN_URL || "#";
       }
 
-      const showGate = !state.loggedIn || (!state.isPremium && state.stage !== Q.STAGES.ACTIVE);
-      if (showGate) {
-        updateLoginGate(state);
-        els.loginGateCard?.classList.remove("is-hidden");
-      } else {
-        els.loginGateCard?.classList.add("is-hidden");
-      }
-
       const summary = Q.getQuotaSummary(state);
       if (els.quotaText) {
         els.quotaText.innerHTML = summary.sub
@@ -322,23 +256,19 @@
           : summary.text;
       }
       renderQuotaTooltip();
-      updateUploadAvailability(state);
+      els.uploadZone?.classList.remove("is-quota-blocked");
+      els.btnSelectFile?.classList.remove("is-quota-blocked");
+      els.btnSelectFile?.setAttribute("aria-disabled", "false");
 
       const busy = workflowView !== "upload";
-      if (!busy && (!state.loggedIn || (state.stage !== Q.STAGES.ACTIVE && !state.isPremium))) {
-        setView("upload");
-      }
+      if (!busy) setView("upload");
     }
 
     function tryConsumeUse() {
-      if (!canStartUpload()) {
-        flashLoginGate();
-        return false;
-      }
       const consume = Q.consumeUse();
       if (!consume.ok) {
+        global.WPSQuotaModals?.openQuotaExhausted();
         renderUI();
-        flashLoginGate();
         return false;
       }
       return true;
@@ -408,9 +338,6 @@
     }
 
     // Wire shared chrome once
-    els.btnLoginPrimary?.addEventListener("click", () => {
-      handleAction(els.btnLoginPrimary.dataset.action || "login");
-    });
     document.getElementById("chrome-login-link")?.addEventListener("click", (e) => {
       if (Q.getState().loggedIn) e.preventDefault();
     });
@@ -419,6 +346,10 @@
     bindQuotaTooltip();
     bindDemoPanel?.(renderUI, resetToUpload);
     Links()?.wireDownloadTriggers(document.getElementById("tool-content-mount"));
+    global.WPSQuotaModals?.wireUpgradeListener?.(() => {
+      resetToUpload();
+      renderUI();
+    });
 
     // Configure file input for single vs multi
     if (els.fileInput) {
@@ -455,8 +386,6 @@
       showResult,
       resetToUpload,
       renderUI,
-      canStartUpload,
-      flashLoginGate,
       tryConsumeUse,
       runUploadProgress,
       runCombinedUploadProgress,
@@ -470,45 +399,36 @@
   }
 
   function bindUploadZone(ctx, onFiles) {
-    const { els, canStartUpload, flashLoginGate, dragGateFlashTimer } = ctx;
+    const { els } = ctx;
 
-    els.btnSelectFile?.addEventListener("click", (e) => {
-      if (!canStartUpload()) { e.preventDefault(); flashLoginGate(); return; }
+    function acceptFiles(files) {
+      const list = Array.from(files || []).filter(Boolean);
+      if (!list.length) return;
+      if (global.WPSQuotaModals?.interceptUpload(list, document.body?.dataset?.toolSlug || ctx.tool?.slug || "")) return;
+      onFiles(list);
+    }
+
+    els.btnSelectFile?.addEventListener("click", () => {
       els.fileInput.click();
     });
 
-    els.uploadZone?.addEventListener("click", (e) => {
-      if (e.target.closest("#btn-select-file")) return;
-      if (!canStartUpload()) flashLoginGate();
-    });
-
     els.fileInput?.addEventListener("change", (e) => {
-      onFiles(Array.from(e.target.files || []));
+      acceptFiles(e.target.files);
       e.target.value = "";
     });
 
     ["dragenter", "dragover"].forEach((ev) => {
       els.uploadZone?.addEventListener(ev, (e) => {
         e.preventDefault();
-        if (canStartUpload()) {
-          els.uploadZone.classList.add("is-dragover");
-          els.uploadZone.classList.remove("is-drag-denied");
-        } else {
-          els.uploadZone.classList.remove("is-dragover");
-          els.uploadZone.classList.add("is-drag-denied");
-          clearTimeout(dragGateFlashTimer.value);
-          dragGateFlashTimer.value = setTimeout(() => flashLoginGate(), 120);
-        }
+        els.uploadZone.classList.add("is-dragover");
+        els.uploadZone.classList.remove("is-drag-denied");
       });
     });
     ["dragleave", "drop"].forEach((ev) => {
       els.uploadZone?.addEventListener(ev, (e) => {
         e.preventDefault();
         els.uploadZone.classList.remove("is-dragover", "is-drag-denied");
-        if (ev === "drop") {
-          if (!canStartUpload()) flashLoginGate();
-          else onFiles(Array.from(e.dataTransfer.files || []));
-        }
+        if (ev === "drop") acceptFiles(e.dataTransfer.files);
       });
     });
   }
@@ -752,7 +672,6 @@
     }
 
     function openAddFiles() {
-      if (!ctx.canStartUpload()) { ctx.flashLoginGate(); return; }
       const input = document.createElement("input");
       input.type = "file";
       input.accept = ".pdf,application/pdf";
